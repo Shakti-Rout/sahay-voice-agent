@@ -13,7 +13,11 @@ _ILRC_HIGH_EXTRA: Set[str] = set()
 def _load_ilrc_corpus():
     paths = [
         Path(__file__).resolve().parent.parent.parent.parent / "data" / "processed" / "indian_linguistic_risk_corpus.csv",
-        Path(__file__).resolve().parent.parent.parent.parent / "data" / "indian_linguistic_risk_corpus.csv"
+        Path(__file__).resolve().parent.parent.parent.parent / "data" / "indian_linguistic_risk_corpus.csv",
+        Path.cwd() / "data" / "processed" / "indian_linguistic_risk_corpus.csv",
+        Path.cwd() / "data" / "indian_linguistic_risk_corpus.csv",
+        Path("/app/data/processed/indian_linguistic_risk_corpus.csv"),
+        Path("/app/data/indian_linguistic_risk_corpus.csv")
     ]
     for p in paths:
         if p.exists():
