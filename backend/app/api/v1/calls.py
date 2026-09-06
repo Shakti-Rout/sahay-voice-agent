@@ -48,7 +48,9 @@ async def exotel_inbound_webhook(request: Request):
     logger.info(f"[ExotelWebhook] Incoming call from {caller} (CallSid: {call_sid})")
 
     # Construct WebSocket connection URL for Exotel AgentStream
-    ws_scheme = "wss" if request.url.scheme == "https" else "ws"
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower()
+    is_secure = request.url.scheme == "https" or forwarded_proto == "https" or settings.ENVIRONMENT == "production"
+    ws_scheme = "wss" if is_secure else "ws"
     ws_url = f"{ws_scheme}://{request.headers.get('host', 'localhost:8000')}/ws/exotel/{call_sid}"
 
     # Return Exotel voice response connecting to AgentStream
