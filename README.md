@@ -77,11 +77,22 @@ Click **Start Recording**, speak in Odia, Hindi, or English, and test the entire
 
 ---
 
-## 🧪 Testing Scenarios Offline
-Run automated evaluation on pre-recorded scenario audio files:
-```bash
-python scripts/test_audio.py data/test_audio/odia/threat_01.wav
-```
+## 🌐 Production Deployment (Railway)
+
+The production voice gateway is deployed and active on **Railway**:
+* **Base URL**: `https://sahay.up.railway.app`
+* **Health Check**: `https://sahay.up.railway.app/api/v1/health`
+* **API Documentation**: `https://sahay.up.railway.app/docs`
+* **Operator Triage Dashboard**: `https://sahay.up.railway.app/dashboard`
+* **Web Microphone Test Console**: `https://sahay.up.railway.app/test-console`
+
+### Exotel Telephony Configuration (App ID: `1334274`)
+1. **Passthru Applet**:
+   * **URL**: `https://sahay.up.railway.app/api/v1/calls/webhook/exotel`
+   * **Method**: `GET`
+2. **Voicebot Applet**:
+   * **WebSocket URL**: `wss://sahay.up.railway.app/ws/exotel/live_call`
+   * **Format**: `PCM 8kHz 16-bit` or `mu-law 8kHz`
 
 ---
 
