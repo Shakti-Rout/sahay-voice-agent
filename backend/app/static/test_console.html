@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NHAA 14566 — Real-Time Voice Triage Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070a12;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --risk-low: #10b981;
+      --risk-mod: #f59e0b;
+      --risk-high: #f97316;
+      --risk-crit: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% -10%, #1e293b 0%, #070a12 70%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1140px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .badge-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      display: inline-block;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Live Phone Call Panel */
+    .call-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 24px;
+      gap: 16px;
+      margin-bottom: 20px;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .call-btn-container {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .btn-call {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px 38px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      border-radius: 9999px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 25px rgba(16, 185, 129, 0.35);
+      user-select: none;
+    }
+
+    .btn-call-connect {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+
+    .btn-call-connect:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(16, 185, 129, 0.55);
+    }
+
+    .btn-call-disconnect {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 4px 25px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-call-disconnect:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(239, 68, 68, 0.6);
+    }
+
+    .call-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .call-timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 620px;
+      height: 64px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .barge-in-tip {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Grid Layout */
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 840px) {
+      .grid-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .conversation-log {
+      min-height: 220px;
+      max-height: 260px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 0.92rem;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .msg-bubble {
+      padding: 10px 14px;
+      border-radius: 10px;
+      line-height: 1.5;
+      max-width: 90%;
+    }
+
+    .msg-caller {
+      align-self: flex-end;
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+    }
+
+    .msg-agent {
+      align-self: flex-start;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      color: #67e8f9;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.88rem;
+    }
+
+    .bar-container {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      margin: 0 12px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--accent-cyan);
+      border-radius: 9999px;
+      transition: width 0.4s ease-out;
+      width: 0%;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-low { background: rgba(16, 185, 129, 0.15); color: var(--risk-low); border: 1px solid var(--risk-low); }
+    .badge-mod, .badge-mode { background: rgba(245, 158, 11, 0.15); color: var(--risk-mod); border: 1px solid var(--risk-mod); }
+    .badge-high { background: rgba(249, 115, 22, 0.15); color: var(--risk-high); border: 1px solid var(--risk-high); }
+    .badge-crit { background: rgba(239, 68, 68, 0.2); color: var(--risk-crit); border: 1px solid var(--risk-crit); animation: pulse-red 1.2s infinite; }
+
+    .tag-pill {
+      display: inline-block;
+      padding: 4px 9px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      font-size: 0.78rem;
+      margin-right: 6px;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+      50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+    }
+
+    @keyframes pulse-blue {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .speaking-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      animation: pulse-blue 1.2s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1 style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.3px;">NHAA 14566 — Real-Time AI Telephone Voice Agent</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Hands-Free Multimodal Voice Distress & Trauma Triage Session</p>
+      </div>
+      <div class="badge-header">
+        <span class="status-dot"></span>
+        <span>Gateway: Live</span>
+      </div>
+    </header>
+
+    <!-- Hands-Free Telephone Call Panel -->
+    <div class="card call-panel">
+      <!-- Language Selector -->
+      <div style="display: flex; gap: 8px; align-items: center; justify-content: center; margin-bottom: 12px; flex-wrap: wrap;">
+        <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Preferred Language:</span>
+        <button type="button" id="langBtnOdia" class="tag-pill" style="cursor: pointer; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700; padding: 6px 14px;" onclick="selectLanguage('or-IN')">
+          🇮🇳 ଓଡ଼ିଆ (Odia - Default)
+        </button>
+        <button type="button" id="langBtnHindi" class="tag-pill" style="cursor: pointer; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-weight: 400; padding: 6px 14px;" onclick="selectLanguage('hi-IN')">
+          हिंदी (Hindi)
+        </button>
+        <button type="button" id="langBtnEnglish" class="tag-pill" style="cursor: pointer; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-weight: 400; padding: 6px 14px;" onclick="selectLanguage('en-IN')">
+          English
+        </button>
+      </div>
+
+      <div class="call-btn-container">
+        <button id="btnCall" class="btn-call btn-call-connect">
+          <span id="btnCallIcon">📞</span>
+          <span id="btnCallLabel">Dial 14566 (Start Voice Call)</span>
+        </button>
+        <button id="btnDoneSpeaking" class="btn-call" style="display: none; background: rgba(59, 130, 246, 0.18); border: 1px solid #3b82f6; color: #93c5fd; font-size: 0.95rem; padding: 12px 24px;" onclick="forceCommitTurn()">
+          <span>👆</span>
+          <span>Done Speaking (or Spacebar)</span>
+        </button>
+      </div>
+
+      <!-- Live Microphone Volume & Auto Road Noise Rejection Indicator -->
+      <div style="display: flex; gap: 10px; align-items: center; width: 100%; max-width: 660px; font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; flex-wrap: wrap;">
+        <span>Mic Level:</span>
+        <div style="flex: 1; min-width: 120px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; position: relative; overflow: hidden;">
+          <div id="micLevelFill" style="height: 100%; width: 0%; background: #10b981; transition: width 0.05s linear;"></div>
+          <div id="thresholdMarker" style="position: absolute; left: 20%; top: 0; bottom: 0; width: 2px; background: #f59e0b;" title="Auto Dynamic Speech Threshold"></div>
+        </div>
+        <span id="micLevelText" style="font-family: 'JetBrains Mono'; width: 45px; text-align: right;">0.000</span>
+        <span id="voiceOrNoiseTag" class="tag-pill" style="margin: 0; font-size: 0.75rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399;">🛡️ Auto Road & Horn Filter: Active</span>
+      </div>
+
+      <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: center;">
+        <div id="callStatusPill" class="call-status-pill" style="color: var(--text-muted);">
+          <span>⚪ Call Inactive</span>
+        </div>
+        <span id="lblCallTimer" class="call-timer" style="display: none;">00:00</span>
+      </div>
+
+      <canvas id="waveformCanvas"></canvas>
+
+      <div class="barge-in-tip">
+        <span>⚡</span>
+        <span><strong>Hands-Free Voice First</strong>: Speak in <strong>Odia, Hindi, or English</strong>. The AI auto-detects language & vocal distress, and speaks back aloud in real time. You can interrupt the AI at any time.</span>
+      </div>
+    </div>
+
+    <!-- Live Telemetry & Real-Time Triage Display -->
+    <div class="grid-layout">
+      <!-- Live Bilingual Dialogue Stream -->
+      <div class="card">
+        <h2>💬 Live Dialogue Stream (Hands-Free Telephone Loop)</h2>
+        <div id="conversationLog" class="conversation-log">
+          <div style="color: var(--text-muted); text-align: center; margin: auto; font-size: 0.88rem;">
+            Click <strong>"Dial 14566"</strong> above to start the real-time voice call. The AI will greet you over voice immediately.
+          </div>
+        </div>
+        <div style="margin-top: 12px; display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted);">
+          <span>Auto-Detected Language: <strong id="lblLang" style="color: #38bdf8;">--</strong></span>
+          <span>Turn Latency: <strong id="lblLatency" style="color: #10b981;">-- ms</strong></span>
+        </div>
+      </div>
+
+      <!-- Real-Time Triage & Risk Priority -->
+      <div class="card">
+        <h2>🚨 PS 26093 — Real-Time Stress & Trauma Assessment</h2>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Triage Category</div>
+            <div id="riskBadge" class="badge badge-low" style="margin-top: 4px;">IDLE</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Stress Vulnerability Index (SVI)</div>
+            <div id="lblDistressScore" style="font-size: 1.45rem; font-weight: 800; color: #f8fafc;">0.00 (0%)</div>
+          </div>
+        </div>
+
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Recommended Safety Action:</div>
+        <div id="lblAction" style="font-size: 0.88rem; color: #e2e8f0; margin-bottom: 10px; font-weight: 500;">
+          Awaiting call initiation.
+        </div>
+
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Automated Public Service Recommendations:</div>
+        <div id="servicesList" style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px;">
+          <div style="font-size: 0.80rem; color: #64748b;">Standby — Services dynamically generated upon assessment</div>
+        </div>
+
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Detected Trauma Indicators & Evidence:</div>
+        <div id="evidenceList">
+          <span class="tag-pill">No immediate safety flags</span>
+        </div>
+      </div>
+
+      <!-- Acoustic Prosody & Emotion Vectors -->
+      <div class="card">
+        <h2>📊 Acoustic Prosody & Emotion Signals (Wav2Vec2 + openSMILE)</h2>
+        <div style="margin-bottom: 14px;">
+          <div class="metric-row">
+            <span style="width: 70px;">Fear</span>
+            <div class="bar-container"><div id="barFear" class="bar-fill" style="background: #ef4444;"></div></div>
+            <span id="lblFear" style="width: 38px; text-align: right; font-family: 'JetBrains Mono';">0%</span>
+          </div>
+          <div class="metric-row">
+            <span style="width: 70px;">Sadness</span>
+            <div class="bar-container"><div id="barSad" class="bar-fill" style="background: #3b82f6;"></div></div>
+            <span id="lblSad" style="width: 38px; text-align: right; font-family: 'JetBrains Mono';">0%</span>
+          </div>
+          <div class="metric-row">
+            <span style="width: 70px;">Anger</span>
+            <div class="bar-container"><div id="barAnger" class="bar-fill" style="background: #f97316;"></div></div>
+            <span id="lblAnger" style="width: 38px; text-align: right; font-family: 'JetBrains Mono';">0%</span>
+          </div>
+          <div class="metric-row">
+            <span style="width: 70px;">Neutral</span>
+            <div class="bar-container"><div id="barNeutral" class="bar-fill" style="background: #10b981;"></div></div>
+            <span id="lblNeutral" style="width: 38px; text-align: right; font-family: 'JetBrains Mono';">100%</span>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; font-size: 0.82rem; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>Pitch (F0): <strong id="lblPitch" style="color: #f8fafc;">-- Hz</strong></div>
+          <div>Pause Ratio: <strong id="lblPause" style="color: #f8fafc;">--</strong></div>
+          <div>Vocal Tremor: <strong id="lblJitter" style="color: #f8fafc;">--</strong></div>
+          <div>Speech Rate: <strong id="lblSpeechRate" style="color: #f8fafc;">-- syl/s</strong></div>
+        </div>
+      </div>
+
+      <!-- Human Supervisor Dispatch Dossier (SBAR) -->
+      <div class="card">
+        <h2>📋 Human Supervisor Handoff Dossier (SBAR Protocol)</h2>
+        <div style="font-size: 0.85rem; line-height: 1.6; color: #cbd5e1;">
+          <div style="margin-bottom: 8px;"><strong style="color: #38bdf8;">Situation (S):</strong> <span id="sbarSituation">Awaiting call connection.</span></div>
+          <div style="margin-bottom: 8px;"><strong style="color: #38bdf8;">Background (B):</strong> <span id="sbarBackground">Inbound voice connection over NHAA 14566 line.</span></div>
+          <div style="margin-bottom: 8px;"><strong style="color: #38bdf8;">Assessment (A):</strong> <span id="sbarAssessment">Continuous acoustic & linguistic distress scoring active.</span></div>
+          <div><strong style="color: #38bdf8;">Recommendation (R):</strong> <span id="sbarRecommendation">Automated grounding support.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let ws = null;
+    let isCallActive = false;
+    let callTimerInterval = null;
+    let callStartTime = 0;
+
+    // Web Audio Variables
+    let audioContext = null;
+    let mediaStream = null;
+    let scriptProcessor = null;
+    let analyser = null;
+    let activeAudioSource = null;
+    let audioPlaybackQueue = [];
+    let isPlayingAudio = false;
+    let biquadHighpass = null;
+    let biquadLowpass = null;
+
+    // Adaptive Speech turn detection (Hands-Free Human Voice VAD)
+    let isSpeaking = false;
+    let speechBuffer = [];
+    let preRollBuffer = []; // Circular ring buffer (last 5 frames ~640ms)
+    let speechDetectionCount = 0; // Leaky attack counter (2 frames ~256ms)
+    let consecutiveSpeechFrames = 0;
+    let consecutiveBargeInFrames = 0; // Verified human voice counter during AI speech
+    let silenceStart = 0;
+    let utteranceStartTime = 0;
+    let ambientNoiseFloor = 0.015; // Adaptive baseline updated during ambient silence
+    let rmsSlidingHistory = [];
+
+    // UI Elements
+    const btnCall = document.getElementById("btnCall");
+    const btnCallIcon = document.getElementById("btnCallIcon");
+    const btnCallLabel = document.getElementById("btnCallLabel");
+    const btnDoneSpeaking = document.getElementById("btnDoneSpeaking");
+    const callStatusPill = document.getElementById("callStatusPill");
+    const lblCallTimer = document.getElementById("lblCallTimer");
+    const conversationLog = document.getElementById("conversationLog");
+
+    const micLevelFill = document.getElementById("micLevelFill");
+    const thresholdMarker = document.getElementById("thresholdMarker");
+    const micLevelText = document.getElementById("micLevelText");
+    const voiceOrNoiseTag = document.getElementById("voiceOrNoiseTag");
+
+    const lblLang = document.getElementById("lblLang");
+    const lblLatency = document.getElementById("lblLatency");
+    const riskBadge = document.getElementById("riskBadge");
+    const lblDistressScore = document.getElementById("lblDistressScore");
+    const lblAction = document.getElementById("lblAction");
+    const evidenceList = document.getElementById("evidenceList");
+
+    const sbarSituation = document.getElementById("sbarSituation");
+    const sbarBackground = document.getElementById("sbarBackground");
+    const sbarAssessment = document.getElementById("sbarAssessment");
+    const sbarRecommendation = document.getElementById("sbarRecommendation");
+
+    const canvas = document.getElementById("waveformCanvas");
+    const canvasCtx = canvas.getContext("2d");
+
+    // Spacebar listener for instant manual commit if desired
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && isCallActive && !e.target.matches("input, textarea")) {
+        e.preventDefault();
+        forceCommitTurn();
+      }
+    });
+
+    function forceCommitTurn() {
+      if (!isCallActive) return;
+      if (speechBuffer.length >= 3) {
+        console.log("[HVAD] User force-committed turn (button / spacebar)");
+        isSpeaking = false;
+        callStatusPill.innerHTML = '<span style="color:#f59e0b;">⚡ Analyzing Full Statement & Situation...</span>';
+        commitSpeechUtterance(speechBuffer);
+        speechBuffer = [];
+        speechDetectionCount = 0;
+      } else {
+        console.log("[HVAD] Force commit skipped: speech buffer too short (< 3 frames)");
+      }
+    }
+
+    btnCall.addEventListener("click", async () => {
+      if (!isCallActive) {
+        await startCall();
+      } else {
+        stopCall();
+      }
+    });
+
+    async function startCall() {
+      try {
+        // 1. Request microphone access with echo cancellation & noise suppression
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        const source = audioContext.createMediaStreamSource(mediaStream);
+
+        // 2. Hardware Biquad Bandpass Filters:
+        // Strip low-frequency traffic rumble, tire noise, 50Hz mains & high-frequency hiss
+        biquadHighpass = audioContext.createBiquadFilter();
+        biquadHighpass.type = "highpass";
+        biquadHighpass.frequency.value = 320; // Cut sub-320Hz traffic rumble, tire noise, and engine drone
+
+        biquadLowpass = audioContext.createBiquadFilter();
+        biquadLowpass.type = "lowpass";
+        biquadLowpass.frequency.value = 3400; // Telephony speech band limit
+
+        source.connect(biquadHighpass);
+        biquadHighpass.connect(biquadLowpass);
+
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        biquadLowpass.connect(analyser);
+        drawWaveform();
+
+        // 3. Open WebSocket to Voice Gateway
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const callId = "call_" + Math.random().toString(36).substring(2, 9);
+        const wsUrl = `${protocol}//${window.location.host}/ws/client/${callId}`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          isCallActive = true;
+          btnCall.className = "btn-call btn-call-disconnect";
+          btnCallIcon.innerText = "🔴";
+          btnCallLabel.innerText = "End Call (Hang Up)";
+          if (btnDoneSpeaking) btnDoneSpeaking.style.display = "inline-flex";
+          callStatusPill.innerHTML = '<span class="status-dot"></span> <span style="color:#10b981;">Connected to 14566</span>';
+
+          callStartTime = Date.now();
+          lblCallTimer.style.display = "inline-block";
+          callTimerInterval = setInterval(updateCallTimer, 1000);
+
+          conversationLog.innerHTML = "";
+          setupAudioProcessing(biquadLowpass);
+
+          // Inform server of initial preferred language
+          ws.send(JSON.stringify({ event: "set_language", language: selectedLanguage }));
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleServerMessage(data);
+          } catch (e) {
+            console.error("Invalid JSON from gateway:", e);
+          }
+        };
+
+        ws.onerror = (err) => {
+          console.error("WebSocket error:", err);
+          stopCall();
+        };
+
+        ws.onclose = () => {
+          stopCall();
+        };
+
+      } catch (err) {
+        console.error("Failed to connect voice call:", err);
+        alert("Microphone permission required to connect to the 14566 Voice Agent: " + err.message);
+      }
+    }
+
+    function calculatePitchPeriodicity(channelData) {
+      // Analyze pitch periodicity in human voice range: 80Hz - 360Hz (lags 44 to 200 at 16kHz)
+      const windowLen = 256;
+      if (!channelData || channelData.length < 400) return 0;
+      let energy0 = 0;
+      for (let i = 0; i < windowLen; i++) {
+        energy0 += channelData[i] * channelData[i];
+      }
+      if (energy0 < 1e-5) return 0;
+
+      let maxCorr = 0;
+      const maxLag = Math.min(200, channelData.length - windowLen);
+      for (let lag = 44; lag <= maxLag; lag += 2) {
+        let dot = 0;
+        let energyLag = 0;
+        for (let i = 0; i < windowLen; i++) {
+          const a = channelData[i];
+          const b = channelData[i + lag];
+          dot += a * b;
+          energyLag += b * b;
+        }
+        if (energyLag > 1e-5) {
+          const r = dot / Math.sqrt(energy0 * energyLag);
+          if (r > maxCorr) maxCorr = r;
+        }
+      }
+      return maxCorr;
+    }
+
+    function computeLinearSpectrum(samples, sampleRate) {
+      // 512-point FFT provides 31.25Hz resolution at 16kHz (256 bins)
+      const n = 512;
+      if (!samples || samples.length < n) return { peakFreq: 0, top2Ratio: 0, top4Ratio: 0, top8Ratio: 0, peakiness: 0, maxVal: 0 };
+      const real = new Float32Array(n);
+      const imag = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        // Hanning window to eliminate spectral leakage
+        const w = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (n - 1)));
+        real[i] = samples[i] * w;
+      }
+      // Bit-reversal sorting
+      let j = 0;
+      for (let i = 0; i < n - 1; i++) {
+        if (i < j) {
+          const tr = real[i]; real[i] = real[j]; real[j] = tr;
+          const ti = imag[i]; imag[i] = imag[j]; imag[j] = ti;
+        }
+        let k = n >> 1;
+        while (k <= j) { j -= k; k >>= 1; }
+        j += k;
+      }
+      // Butterfly stages
+      for (let len = 2; len <= n; len <<= 1) {
+        const half = len >> 1;
+        const ang = -2 * Math.PI / len;
+        const wstep_r = Math.cos(ang), wstep_i = Math.sin(ang);
+        for (let i = 0; i < n; i += len) {
+          let wr = 1, wi = 0;
+          for (let k = 0; k < half; k++) {
+            const u_r = real[i + k], u_i = imag[i + k];
+            const v_r = real[i + k + half] * wr - imag[i + k + half] * wi;
+            const v_i = real[i + k + half] * wi + imag[i + k + half] * wr;
+            real[i + k] = u_r + v_r;
+            imag[i + k] = u_i + v_i;
+            real[i + k + half] = u_r - v_r;
+            imag[i + k + half] = u_i - v_i;
+            const nwr = wr * wstep_r - wi * wstep_i;
+            wi = wr * wstep_i + wi * wstep_r;
+            wr = nwr;
+          }
+        }
+      }
+      const halfN = n >> 1;
+      const mags = new Float32Array(halfN + 1);
+      let sum = 0, maxVal = 0, maxIdx = 0;
+      for (let i = 0; i <= halfN; i++) {
+        const m = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+        mags[i] = m;
+        sum += m;
+        if (m > maxVal) { maxVal = m; maxIdx = i; }
+      }
+      if (sum < 1e-6) return { peakFreq: 0, top2Ratio: 0, top4Ratio: 0, top8Ratio: 0, peakiness: 0, maxVal: 0 };
+      const sorted = Array.from(mags).sort((a, b) => b - a);
+      const top2Ratio = (sorted[0] + sorted[1]) / sum;
+      const top4Ratio = (sorted[0] + sorted[1] + sorted[2] + sorted[3]) / sum;
+      const top8Ratio = (sorted[0] + sorted[1] + sorted[2] + sorted[3] + sorted[4] + sorted[5] + sorted[6] + sorted[7]) / sum;
+      const peakiness = maxVal / (sum / (halfN + 1));
+      const peakFreq = maxIdx * (sampleRate / n);
+      return { peakFreq, top2Ratio, top4Ratio, top8Ratio, peakiness, maxVal };
+    }
+
+    function setupAudioProcessing(filteredAudioNode) {
+      // 2048 samples at 16kHz = 128ms per frame
+      scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+      filteredAudioNode.connect(scriptProcessor);
+
+      // Connect to mute gain to keep processor running without feedback into speakers
+      const muteGain = audioContext.createGain();
+      muteGain.gain.value = 0;
+      scriptProcessor.connect(muteGain);
+      muteGain.connect(audioContext.destination);
+
+      const freqData = new Uint8Array(analyser.frequencyBinCount);
+      let verifiedHumanSpeechFrames = 0;
+      let hornFramesCount = 0;
+
+      scriptProcessor.onaudioprocess = (e) => {
+        if (!isCallActive || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+        const inputChannel = e.inputBuffer.getChannelData(0);
+        
+        // 1. Calculate Root Mean Square (RMS) energy
+        let sum = 0;
+        for (let i = 0; i < inputChannel.length; i++) {
+          sum += inputChannel[i] * inputChannel[i];
+        }
+        const rms = Math.sqrt(sum / inputChannel.length);
+
+        // Convert to 16-bit PCM bytes (with sample-rate normalizer to 16kHz)
+        const pcm16 = floatTo16BitPCM(inputChannel, audioContext.sampleRate);
+
+        // 2. High-Precision Linear FFT Spectral Analysis (Vehicle Horn & Siren Rejection)
+        const linearSpec = computeLinearSpectrum(inputChannel, audioContext.sampleRate);
+        // True vehicle horn: extreme acoustic concentration (top4 > 0.70, top2 > 0.38, sum > 1.10)
+        // Human speech formants have top4 < 0.42 and sum < 0.65
+        const isHornOrSiren = (
+          linearSpec.maxVal > 0.030 &&
+          linearSpec.peakFreq >= 300 && linearSpec.peakFreq <= 4200 &&
+          linearSpec.top4Ratio > 0.70 &&
+          linearSpec.top2Ratio > 0.38 &&
+          (linearSpec.top2Ratio + linearSpec.top4Ratio) > 1.10
+        );
+
+        // Sub-312Hz Low-frequency Traffic & Engine Rumble Analysis
+        analyser.getByteFrequencyData(freqData);
+        let vocalBandEnergy = 0;
+        let lowFreqEnergy = 0;
+        let totalSpectralEnergy = 0;
+        for (let i = 0; i < freqData.length; i++) {
+          const v = freqData[i];
+          totalSpectralEnergy += v;
+          if (i < 5) lowFreqEnergy += v;
+          if (i >= 2 && i <= 50) vocalBandEnergy += v;
+        }
+        const vocalRatio = totalSpectralEnergy > 0 ? (vocalBandEnergy / totalSpectralEnergy) : 0;
+        const lowFreqRatio = totalSpectralEnergy > 0 ? (lowFreqEnergy / totalSpectralEnergy) : 0;
+
+        // Pitch Periodicity / Harmonicity (Autocorrelation in 80Hz - 360Hz pitch range)
+        const pitchHarmonicity = calculatePitchPeriodicity(inputChannel);
+
+        // 3. Stationarity check (Fans, AC, continuous road rumble have steady, non-fluctuating volume)
+        rmsSlidingHistory.push(rms);
+        if (rmsSlidingHistory.length > 10) rmsSlidingHistory.shift();
+
+        let meanRms = 0;
+        for (let v of rmsSlidingHistory) meanRms += v;
+        meanRms /= rmsSlidingHistory.length;
+
+        let varRms = 0;
+        for (let v of rmsSlidingHistory) varRms += (v - meanRms) * (v - meanRms);
+        const stdRms = Math.sqrt(varRms / rmsSlidingHistory.length);
+        const cv = meanRms > 0 ? (stdRms / meanRms) : 0; // Coefficient of Variation
+
+        // Maintain 5-frame circular pre-roll buffer (~640ms) so speech onsets and leading consonants are never clipped
+        preRollBuffer.push(pcm16);
+        if (preRollBuffer.length > 5) preRollBuffer.shift();
+
+        // 4. Adapt ambient noise floor continuously during silence
+        if (!isSpeaking && !isPlayingAudio && !activeAudioSource && !isHornOrSiren) {
+          ambientNoiseFloor = (ambientNoiseFloor * 0.96) + (rms * 0.04);
+          ambientNoiseFloor = Math.max(0.012, Math.min(0.045, ambientNoiseFloor));
+        }
+
+        // 5. Dynamic Auto-Threshold (No manual configuration needed)
+        const currentThreshold = Math.max(0.024, Math.min(0.075, ambientNoiseFloor * 2.3));
+
+        // Update live mic meter & threshold marker
+        if (micLevelFill) {
+          const pct = Math.min(100, Math.round((rms / 0.12) * 100));
+          micLevelFill.style.width = pct + '%';
+        }
+        if (thresholdMarker) {
+          const threshPct = Math.min(100, Math.round((currentThreshold / 0.12) * 100));
+          thresholdMarker.style.left = threshPct + '%';
+        }
+        if (micLevelText) {
+          micLevelText.innerText = rms.toFixed(3);
+        }
+
+        // 6. Differentiate Human Voice vs Passing Road Traffic, Vehicle Noise & Horns
+        const isRoadVehicleNoise = (pitchHarmonicity < 0.18 && rms < currentThreshold * 2.0) || (lowFreqRatio > 0.65 && pitchHarmonicity < 0.20);
+        const isStationaryNoise = (cv < 0.12 && rms < currentThreshold * 1.4);
+        const isHumanVoice = (
+          rms > currentThreshold &&
+          !isHornOrSiren &&
+          !isStationaryNoise &&
+          !isRoadVehicleNoise &&
+          (vocalRatio >= 0.18 || pitchHarmonicity >= 0.20)
+        );
+
+        // Update UI Noise Filter indicator
+        if (voiceOrNoiseTag) {
+          if (isHornOrSiren) {
+            voiceOrNoiseTag.innerHTML = `<span style="color:#f59e0b; font-weight:700;">🛡️ Vehicle Horn Rejected (${Math.round(linearSpec.peakFreq)}Hz)</span>`;
+            voiceOrNoiseTag.style.background = "rgba(245, 158, 11, 0.15)";
+          } else if (isRoadVehicleNoise || isStationaryNoise) {
+            voiceOrNoiseTag.innerHTML = '<span style="color:#94a3b8;">🛡️ Road Noise Suppressed</span>';
+            voiceOrNoiseTag.style.background = "rgba(100, 116, 139, 0.15)";
+          } else if (isHumanVoice) {
+            voiceOrNoiseTag.innerHTML = '<span style="color:#10b981; font-weight:700;">🟢 Human Voice Active</span>';
+            voiceOrNoiseTag.style.background = "rgba(16, 185, 129, 0.15)";
+          } else {
+            voiceOrNoiseTag.innerHTML = '<span style="color:#64748b;">⚪ Listening for Caller</span>';
+            voiceOrNoiseTag.style.background = "rgba(255, 255, 255, 0.04)";
+          }
+        }
+
+        // 7. STRICT AI SPEECH PROTECTION (Disables Barge-In to completely isolate road noise and horns)
+        if (isPlayingAudio || (activeAudioSource && !activeAudioSource.paused && !activeAudioSource.ended)) {
+          // Completely ignore ALL mic audio while AI is speaking so vehicle horns, street rumble, and background sounds cannot cut off the AI!
+          consecutiveBargeInFrames = 0;
+          speechDetectionCount = 0;
+          return;
+        }
+
+        // 8. CALLER TURN HANDLING: Natural Voice Capture
+        if (isHornOrSiren) {
+          speechDetectionCount = Math.max(0, speechDetectionCount - 1);
+          return;
+        }
+
+        if (isHumanVoice) {
+          speechDetectionCount = Math.min(6, speechDetectionCount + 1);
+          silenceStart = Date.now();
+
+          // Require 2 vocal frames (~256ms) to confirm voice onset
+          if (!isSpeaking) {
+            if (speechDetectionCount >= 2) {
+              isSpeaking = true;
+              speechBuffer = [...preRollBuffer]; // Prepend pre-roll buffer to preserve beginning of words
+              utteranceStartTime = Date.now();
+              callStatusPill.innerHTML = '<span class="speaking-indicator" style="color:#38bdf8;">🎙️ Caller Speaking (Listening...)</span>';
+            }
+          } else {
+            speechBuffer.push(pcm16);
+          }
+        } else {
+          // Leaky decay instead of abrupt zero-reset
+          if (speechDetectionCount > 0) speechDetectionCount--;
+
+          if (isSpeaking) {
+            speechBuffer.push(pcm16); // Include trailing context
+            const pauseElapsed = Date.now() - silenceStart;
+
+            // Rapid 1.0-Second Turn Commitment (PS 26093 High Responsiveness):
+            if (pauseElapsed > 1000) {
+              isSpeaking = false;
+              // Minimum utterance filter: Require at least 3 frames (~384ms) of speech
+              if (speechBuffer.length >= 3) {
+                callStatusPill.innerHTML = '<span style="color:#f59e0b;">⚡ Assessing Stress & Synthesizing Response...</span>';
+                commitSpeechUtterance(speechBuffer);
+              } else {
+                callStatusPill.innerHTML = '<span style="color:#94a3b8;">🛡️ Non-Speech Filtered — Listening...</span>';
+              }
+              speechBuffer = [];
+              speechDetectionCount = 0;
+            }
+          }
+        }
+
+        // Safety Turn Guard: Auto-commit only if continuous speech reaches 30.0 seconds
+        if (isSpeaking && Date.now() - utteranceStartTime > 30000) {
+          console.log("[HVAD] Utterance reached 30.0s continuous cap. Auto-committing complete turn.");
+          isSpeaking = false;
+          if (speechBuffer.length >= 3) {
+            callStatusPill.innerHTML = '<span style="color:#f59e0b;">⚡ Analyzing Full Statement & Situation...</span>';
+            commitSpeechUtterance(speechBuffer);
+          }
+          speechBuffer = [];
+          speechDetectionCount = 0;
+        }
+      };
+    }
+
+    function commitSpeechUtterance(buffers) {
+      try {
+        let totalLength = 0;
+        for (const b of buffers) totalLength += b.byteLength;
+        const combined = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const b of buffers) {
+          combined.set(new Uint8Array(b), offset);
+          offset += b.byteLength;
+        }
+
+        // Safe chunked conversion to prevent "Maximum call stack size exceeded"
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < combined.length; i += chunkSize) {
+          const slice = combined.subarray(i, Math.min(i + chunkSize, combined.length));
+          binary += String.fromCharCode.apply(null, slice);
+        }
+        const b64 = btoa(binary);
+
+        console.log(`[Utterance] Sending ${combined.length} bytes to 14566 Voice Agent...`);
+        ws.send(JSON.stringify({
+          event: "utterance",
+          payload: b64
+        }));
+      } catch (err) {
+        console.error("Failed to commit utterance:", err);
+      }
+    }
+
+    function floatTo16BitPCM(input, inputSampleRate = 16000) {
+      let data = input;
+      if (inputSampleRate !== 16000 && input.length > 0) {
+        const ratio = inputSampleRate / 16000;
+        const newLen = Math.round(input.length / ratio);
+        const resampled = new Float32Array(newLen);
+        for (let i = 0; i < newLen; i++) {
+          const origIdx = i * ratio;
+          const i1 = Math.floor(origIdx);
+          const i2 = Math.min(input.length - 1, i1 + 1);
+          const frac = origIdx - i1;
+          resampled[i] = input[i1] * (1 - frac) + input[i2] * frac;
+        }
+        data = resampled;
+      }
+      const output = new Int16Array(data.length);
+      for (let i = 0; i < data.length; i++) {
+        const s = Math.max(-1, Math.min(1, data[i]));
+        output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return output.buffer;
+    }
+
+    function handleServerMessage(data) {
+      // 1. Initial or Turn Agent Text Response
+      if (data.event === "agent_response") {
+        appendMessage("agent", data.text);
+        callStatusPill.innerHTML = '<span class="speaking-indicator" style="color:#10b981;">🔊 14566 Voice Agent Speaking...</span>';
+      }
+
+      // 2. Outbound Voice Audio Stream from AI
+      else if (data.event === "media") {
+        playVoiceAudio(data.payload);
+      }
+
+      // 3. Multimodal Distress & Triage Telemetry Update (PS 26093)
+      else if (data.event === "assessment_update") {
+        if (data.transcript && data.transcript.trim()) {
+          appendMessage("caller", data.transcript);
+        }
+
+        lblLang.innerText = (data.language || "Odia").toUpperCase();
+
+        const risk = data.risk;
+        if (risk) {
+          const svi = data.svi_score ?? risk.svi_score ?? risk.risk_score ?? 0;
+          const sviPct = data.svi_percentage ?? risk.svi_percentage ?? Math.round(svi * 100);
+          lblDistressScore.innerText = `${svi.toFixed(2)} (${sviPct}%)`;
+          riskBadge.innerText = risk.risk_level || "LOW";
+          riskBadge.className = `badge badge-${(risk.risk_level || "low").toLowerCase().substring(0,4)}`;
+          lblAction.innerText = risk.recommended_action || "Informational assistance";
+
+          // SBAR Updates
+          sbarSituation.innerText = `Caller reporting: "${data.transcript || 'In distress'}"`;
+          sbarAssessment.innerText = `Triage: ${risk.risk_level} (Stress Vulnerability Index: ${svi.toFixed(2)} | ${sviPct}%)`;
+          sbarRecommendation.innerText = risk.recommended_action || "Continue calming protocol";
+        }
+
+        // Automated Public Service Recommendations (PS 26093)
+        const servicesContainer = document.getElementById("servicesList");
+        if (servicesContainer) {
+          servicesContainer.innerHTML = "";
+          const services = data.recommended_services || (risk && risk.recommended_services) || [];
+          if (services.length > 0) {
+            services.forEach(srv => {
+              const div = document.createElement("div");
+              div.style.cssText = "font-size:0.80rem; padding:5px 9px; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); border-radius:6px; color:#a5b4fc;";
+              div.innerHTML = `🛡️ <strong>${srv}</strong>`;
+              servicesContainer.appendChild(div);
+            });
+          } else {
+            servicesContainer.innerHTML = '<div style="font-size:0.80rem; color:#64748b;">Standard helpline inquiry assistance active</div>';
+          }
+        }
+
+        // Trauma Indicators & Evidence pills (PS 26093 Mandated Indicators)
+        evidenceList.innerHTML = "";
+        const flags = data.safety_flags || (risk && risk.safety_flags) || {};
+        const indicatorTags = [];
+        if (flags.severe_trauma) indicatorTags.push("⚠️ Severe Trauma / Atrocity");
+        if (flags.fear_anxiety) indicatorTags.push("😰 Fear & Acute Anxiety");
+        if (flags.depression_indicator) indicatorTags.push("🌧️ Depression / Hopelessness");
+        if (flags.suicidal_ideation || flags.self_harm_indicator) indicatorTags.push("🚨 Suicidal Ideation / Self-Harm");
+        if (flags.intimidation_threat) indicatorTags.push("🗡️ Active Intimidation / Threats");
+        if (flags.social_boycott_isolation) indicatorTags.push("🚫 Social Boycott / Caste Exclusion");
+        if (flags.extreme_vulnerability) indicatorTags.push("🛑 Extreme Vulnerability");
+        if (flags.weapon_present) indicatorTags.push("⚔️ Weapon Present");
+        if (flags.active_violence) indicatorTags.push("💥 Active Violence");
+
+        const evList = indicatorTags.concat(data.evidence || []);
+        if (evList.length > 0) {
+          evList.forEach(e => {
+            const span = document.createElement("span");
+            span.className = "tag-pill";
+            span.innerText = e;
+            evidenceList.appendChild(span);
+          });
+        } else {
+          evidenceList.innerHTML = '<span class="tag-pill">No immediate critical safety flags</span>';
+        }
+
+        // Emotion Probabilities (Wav2Vec2)
+        const emo = (data.emotion && data.emotion.probabilities) || {};
+        updateBar("Fear", emo.fear || 0);
+        updateBar("Sad", emo.sadness || 0);
+        updateBar("Anger", emo.anger || 0);
+        updateBar("Neutral", emo.neutral || 0);
+
+        // Acoustic Prosody (openSMILE)
+        const ac = data.acoustic || {};
+        document.getElementById("lblPitch").innerText = ac.mean_pitch_f0 ? `${ac.mean_pitch_f0} Hz` : "--";
+        document.getElementById("lblPause").innerText = ac.pause_ratio ? `${ac.pause_ratio}` : "--";
+        document.getElementById("lblJitter").innerText = ac.jitter ? `${ac.jitter}` : "--";
+        document.getElementById("lblSpeechRate").innerText = ac.speech_rate ? `${ac.speech_rate} syl/s` : "--";
+      }
+
+      else if (data.event === "clear_buffer") {
+        audioPlaybackQueue = [];
+        if (activeAudioSource) {
+          activeAudioSource.pause();
+          activeAudioSource = null;
+        }
+        isPlayingAudio = false;
+      }
+
+      else if (data.event === "noise_ignored") {
+        if (isCallActive && !isSpeaking && !isPlayingAudio) {
+          callStatusPill.innerHTML = '<span style="color:#94a3b8;">🛡️ Background Noise Filtered — Listening for caller</span>';
+        }
+      }
+    }
+
+    let selectedLanguage = "or-IN";
+
+    function selectLanguage(langCode) {
+      selectedLanguage = langCode;
+      const btnOdia = document.getElementById("langBtnOdia");
+      const btnHindi = document.getElementById("langBtnHindi");
+      const btnEnglish = document.getElementById("langBtnEnglish");
+
+      if (btnOdia && btnHindi && btnEnglish) {
+        [btnOdia, btnHindi, btnEnglish].forEach(b => {
+          b.style.background = "rgba(255, 255, 255, 0.05)";
+          b.style.borderColor = "rgba(255, 255, 255, 0.15)";
+          b.style.color = "#cbd5e1";
+          b.style.fontWeight = "400";
+        });
+
+        if (langCode === "or-IN") {
+          btnOdia.style.background = "rgba(56, 189, 248, 0.2)";
+          btnOdia.style.borderColor = "#38bdf8";
+          btnOdia.style.color = "#38bdf8";
+          btnOdia.style.fontWeight = "700";
+        } else if (langCode === "hi-IN") {
+          btnHindi.style.background = "rgba(245, 158, 11, 0.2)";
+          btnHindi.style.borderColor = "#f59e0b";
+          btnHindi.style.color = "#f59e0b";
+          btnHindi.style.fontWeight = "700";
+        } else {
+          btnEnglish.style.background = "rgba(16, 185, 129, 0.2)";
+          btnEnglish.style.borderColor = "#10b981";
+          btnEnglish.style.color = "#10b981";
+          btnEnglish.style.fontWeight = "700";
+        }
+      }
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ event: "set_language", language: langCode }));
+      }
+    }
+
+    function playVoiceAudio(base64Data) {
+      if (!base64Data) return;
+      audioPlaybackQueue.push(base64Data);
+      if (!isPlayingAudio) {
+        playNextQueuedAudio();
+      }
+    }
+
+    function playNextQueuedAudio() {
+      if (audioPlaybackQueue.length === 0) {
+        isPlayingAudio = false;
+        activeAudioSource = null;
+        consecutiveBargeInFrames = 0;
+        speechDetectionCount = 0;
+        silenceStart = Date.now();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ event: "ai_speaking_ended" }));
+        }
+        if (isCallActive) {
+          callStatusPill.innerHTML = '<span class="speaking-indicator" style="color:#38bdf8;">🎙️ Your Turn — Speak now</span>';
+        }
+        return;
+      }
+
+      isPlayingAudio = true;
+      const base64Data = audioPlaybackQueue.shift();
+
+      try {
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const audioBlob = new Blob([byteArray], { type: "audio/wav" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        activeAudioSource = new Audio(audioUrl);
+        activeAudioSource.onended = () => {
+          activeAudioSource = null;
+          playNextQueuedAudio();
+        };
+        activeAudioSource.onerror = () => {
+          activeAudioSource = null;
+          playNextQueuedAudio();
+        };
+        activeAudioSource.play().catch(e => {
+          console.log("Audio play error:", e);
+          activeAudioSource = null;
+          playNextQueuedAudio();
+        });
+      } catch (err) {
+        console.error("Audio playback failure:", err);
+        activeAudioSource = null;
+        playNextQueuedAudio();
+      }
+    }
+
+    function appendMessage(role, text) {
+      if (!text || !text.trim()) return;
+      const msgDiv = document.createElement("div");
+      msgDiv.className = `msg-bubble ${role === "caller" ? "msg-caller" : "msg-agent"}`;
+      msgDiv.innerHTML = `<strong>${role === "caller" ? "Caller" : "NHAA Agent (14566)"}:</strong> ${text}`;
+      conversationLog.appendChild(msgDiv);
+      conversationLog.scrollTop = conversationLog.scrollHeight;
+    }
+
+    function updateBar(name, val) {
+      const pct = Math.min(100, Math.round(val * 100));
+      document.getElementById(`bar${name}`).style.width = `${pct}%`;
+      document.getElementById(`lbl${name}`).innerText = `${pct}%`;
+    }
+
+    function updateCallTimer() {
+      const sec = Math.floor((Date.now() - callStartTime) / 1000);
+      const min = Math.floor(sec / 60);
+      const rem = sec % 60;
+      lblCallTimer.innerText = `${String(min).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+    }
+
+    function stopCall() {
+      isCallActive = false;
+      isSpeaking = false;
+      speechBuffer = [];
+      preRollBuffer = [];
+      consecutiveSpeechFrames = 0;
+      clearInterval(callTimerInterval);
+      lblCallTimer.style.display = "none";
+
+      btnCall.className = "btn-call btn-call-connect";
+      btnCallIcon.innerText = "📞";
+      btnCallLabel.innerText = "Dial 14566 (Start Voice Call)";
+      if (btnDoneSpeaking) btnDoneSpeaking.style.display = "none";
+      callStatusPill.innerHTML = '<span>⚪ Call Ended</span>';
+
+      audioPlaybackQueue = [];
+      isPlayingAudio = false;
+      if (activeAudioSource) {
+        activeAudioSource.pause();
+        activeAudioSource = null;
+      }
+      if (scriptProcessor) {
+        scriptProcessor.disconnect();
+        scriptProcessor = null;
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+    }
+
+    function drawWaveform() {
+      if (!isCallActive || !analyser) return;
+      requestAnimationFrame(drawWaveform);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteTimeDomainData(dataArray);
+
+      canvasCtx.fillStyle = "rgba(7, 10, 18, 0.4)";
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = "#06b6d4";
+      canvasCtx.beginPath();
+
+      const sliceWidth = canvas.width * 1.0 / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+        if (i === 0) canvasCtx.moveTo(x, y);
+        else canvasCtx.lineTo(x, y);
+        x += sliceWidth;
+      }
+
+      canvasCtx.lineTo(canvas.width, canvas.height / 2);
+      canvasCtx.stroke();
+    }
+  </script>
+</body>
+</html>

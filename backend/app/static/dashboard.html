@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NHAA 14566 — Real-Time AI Trauma & Triage Operator Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(16, 22, 36, 0.85);
+      --bg-card-hover: rgba(23, 31, 52, 0.95);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(99, 102, 241, 0.25);
+      
+      --accent-cyan: #06b6d4;
+      --accent-indigo: #6366f1;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --risk-critical: #f43f5e;
+      --risk-high: #f97316;
+      --risk-moderate: #eab308;
+      --risk-low: #10b981;
+      
+      --glow-red: 0 0 25px rgba(244, 63, 94, 0.35);
+      --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
+    }
+
+    /* Top Navigation Bar */
+    header {
+      background: rgba(10, 15, 29, 0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: var(--glow-cyan);
+    }
+
+    .brand-text h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #818cf8;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .top-stats {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .stat-pill {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 14px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .stat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .dot-live { background: var(--accent-emerald); box-shadow: 0 0 10px var(--accent-emerald); animation: pulse 2s infinite; }
+    .dot-crit { background: var(--accent-rose); box-shadow: 0 0 10px var(--accent-rose); animation: pulse 1s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+    }
+
+    .operator-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 1px solid var(--border-subtle);
+      padding-left: 20px;
+    }
+
+    .operator-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Main Grid Layout */
+    .dashboard-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 320px 1fr 380px;
+      gap: 20px;
+      padding: 20px 28px;
+      max-width: 1800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Glass Panels */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .panel-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-counter {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Call Queue List */
+    .call-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      max-height: calc(100vh - 190px);
+    }
+
+    .call-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .call-item:hover, .call-item.active {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-indigo);
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+    }
+
+    .call-item.critical {
+      border-color: var(--risk-critical);
+      box-shadow: var(--glow-red);
+      animation: alertBorder 2s infinite;
+    }
+
+    @keyframes alertBorder {
+      0%, 100% { border-color: rgba(244, 63, 94, 0.8); }
+      50% { border-color: rgba(244, 63, 94, 0.3); }
+    }
+
+    .call-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .call-phone {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    .badge-risk {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-critical { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); }
+    .badge-high { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); }
+    .badge-moderate { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
+    .badge-low { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .call-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Live Telemetry (Center View) */
+    .waveform-container {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .waveform-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    #waveCanvas {
+      width: 100%;
+      height: 60px;
+      border-radius: 6px;
+      background: rgba(7, 9, 14, 0.6);
+    }
+
+    /* Live Transcript Feed */
+    .transcript-feed {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      max-height: 380px;
+      padding-right: 6px;
+      margin-bottom: 16px;
+    }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      max-width: 85%;
+      position: relative;
+    }
+
+    .bubble-caller {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+      border-bottom-left-radius: 4px;
+    }
+
+    .bubble-agent {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(6, 182, 212, 0.2));
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #e0e7ff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bubble-meta {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Signal Meters */
+    .signals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .metric-box h4 {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .emotion-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .emotion-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .emotion-name {
+      width: 55px;
+      color: var(--text-muted);
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .bar-fear { background: var(--accent-rose); }
+    .bar-sad { background: #38bdf8; }
+    .bar-anger { background: var(--accent-amber); }
+    .bar-neutral { background: var(--accent-emerald); }
+
+    .emotion-val {
+      width: 32px;
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #fff;
+    }
+
+    .prosody-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .prosody-pill {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .prosody-label {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .prosody-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-top: 2px;
+    }
+
+    /* Right Triage & Action Panel */
+    .triage-hero {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(249, 115, 22, 0.05));
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .triage-hero.low-risk {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.05));
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .hero-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .hero-score {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      margin: 4px 0;
+    }
+
+    .hero-status {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* Evidence Chips */
+    .evidence-box {
+      margin-bottom: 16px;
+    }
+
+    .evidence-box h4 {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chip-threat { border-color: rgba(244, 63, 94, 0.4); background: rgba(244, 63, 94, 0.1); color: #fca5a5; }
+
+    /* SBAR Handoff Box */
+    .sbar-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .sbar-row {
+      margin-bottom: 8px;
+    }
+
+    .sbar-label {
+      font-weight: 700;
+      color: var(--accent-indigo);
+      text-transform: uppercase;
+      font-size: 10px;
+    }
+
+    .sbar-val {
+      color: #cbd5e1;
+    }
+
+    /* Action Buttons */
+    .action-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .btn {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-emergency {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4);
+    }
+    .btn-emergency:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(244, 63, 94, 0.6);
+    }
+
+    .btn-takeover {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+    }
+    .btn-takeover:hover {
+      background: #4f46e5;
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: #cbd5e1;
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">14566</div>
+      <div class="brand-text">
+        <h1>NHAA Atrocity Helpline <span class="brand-badge">SIH 2026</span></h1>
+        <p>AI-Based Real-Time Stress & Trauma Assessment Module</p>
+      </div>
+    </div>
+
+    <div class="top-stats">
+      <div class="stat-pill">
+        <span class="stat-dot dot-live"></span>
+        <span>Gateway: <strong>ONLINE</strong></span>
+      </div>
+      <div class="stat-pill">
+        <span>Active Calls: <strong id="statActiveCalls">1</strong></span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-dot dot-crit"></span>
+        <span>Pending Escalations: <strong id="statEscalations" style="color:#fb7185">0</strong></span>
+      </div>
+      <div class="stat-pill">
+        <span>Dialect Router: <strong>Odia / Hindi / En</strong></span>
+      </div>
+
+      <div class="operator-profile">
+        <div class="operator-avatar">OP</div>
+        <div>
+          <div style="font-size:12px; font-weight:600;">Officer Mishra</div>
+          <div style="font-size:10px; color:var(--text-dim);">NHAA Central Desk #04</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid Dashboard -->
+  <main class="dashboard-container">
+
+    <!-- Column 1: Live Call Queue & Escalation Queue -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+          Active Call Queue
+        </div>
+        <div class="panel-counter" id="callQueueCount">1 Live</div>
+      </div>
+
+      <div class="call-list" id="callListContainer">
+        <!-- Live Call Item -->
+        <div class="call-item active" id="activeCallCard" onclick="selectCall('call_demo_live')">
+          <div class="call-meta">
+            <span class="call-phone" id="cardPhoneHash">anon_call_7f3a</span>
+            <span class="badge-risk badge-high" id="cardRiskBadge">HIGH</span>
+          </div>
+          <div class="call-info">
+            <span id="cardLang">Odia (or-IN)</span>
+            <span id="cardPhase">EMPATHY_GROUNDING</span>
+            <span id="cardDuration">01:14</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 2: Live Telemetry, Waveform & Transcript -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h2l3 9 4-18 4 18 3-9h2"></path></svg>
+          Real-Time Multimodal Telemetry
+        </div>
+        <div style="font-size:11px; color:var(--accent-cyan);" id="sessionHeaderId">Call: call_demo_live</div>
+      </div>
+
+      <!-- Waveform Visualizer -->
+      <div class="waveform-container">
+        <div class="waveform-header">
+          <span>8kHz Inbound PCM Audio Stream</span>
+          <span style="color:var(--accent-emerald);">VAD: Speech Active</span>
+        </div>
+        <canvas id="waveCanvas"></canvas>
+      </div>
+
+      <!-- Live Transcript Stream -->
+      <div class="transcript-feed" id="transcriptFeed">
+        <div class="bubble bubble-agent">
+          <div class="bubble-meta">
+            <span>NHAA Voice Agent (14566)</span> • <span>Initial Greeting</span>
+          </div>
+          Namaskar. Mu 14566 Atrocity Helpline automated assistant kahuchhi. Apananka sahajya pain mu achhi, daya kari kuhan tu kana asubidha hoichhi?
+        </div>
+        <div class="bubble bubble-caller">
+          <div class="bubble-meta">
+            <span>Caller (Odia / or-IN)</span> • <span>Turn 1</span>
+          </div>
+          Mu bahut darichhi. Se mate lathi dhari marideba boli dhamaka deichhanti. Ghara bahare thia hoichhanti.
+        </div>
+        <div class="bubble bubble-agent">
+          <div class="bubble-meta">
+            <span>NHAA Voice Agent (14566)</span> • <span>Safety Reassurance</span>
+          </div>
+          Apan bilkul darantu nahi, amara helpline apananka sahita achhi. Apan bartaman ghara bhitare safe sthana re achhanti ki?
+        </div>
+      </div>
+
+      <!-- Multimodal Signals Grid -->
+      <div class="signals-grid">
+        <!-- Emotion Probabilities -->
+        <div class="metric-box">
+          <h4>Vocal Emotion (Wav2Vec2 SER)</h4>
+          <div class="emotion-bars">
+            <div class="emotion-row">
+              <span class="emotion-name">Fear</span>
+              <div class="bar-track"><div class="bar-fill bar-fear" id="barFear" style="width: 76%;"></div></div>
+              <span class="emotion-val" id="valFear">76%</span>
+            </div>
+            <div class="emotion-row">
+              <span class="emotion-name">Sadness</span>
+              <div class="bar-track"><div class="bar-fill bar-sad" id="barSad" style="width: 14%;"></div></div>
+              <span class="emotion-val" id="valSad">14%</span>
+            </div>
+            <div class="emotion-row">
+              <span class="emotion-name">Anger</span>
+              <div class="bar-track"><div class="bar-fill bar-anger" id="barAnger" style="width: 8%;"></div></div>
+              <span class="emotion-val" id="valAnger">8%</span>
+            </div>
+            <div class="emotion-row">
+              <span class="emotion-name">Neutral</span>
+              <div class="bar-track"><div class="bar-fill bar-neutral" id="barNeutral" style="width: 2%;"></div></div>
+              <span class="emotion-val" id="valNeutral">2%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acoustic Prosody -->
+        <div class="metric-box">
+          <h4>Acoustic Prosody (openSMILE)</h4>
+          <div class="prosody-grid">
+            <div class="prosody-pill">
+              <div class="prosody-label">Pitch F0 (Mean)</div>
+              <div class="prosody-val" id="valF0">248 Hz <span style="color:#fb7185;font-size:10px;">↑ High</span></div>
+            </div>
+            <div class="prosody-pill">
+              <div class="prosody-label">Jitter / Tremor</div>
+              <div class="prosody-val" id="valJitter">0.038 <span style="color:#fb7185;font-size:10px;">↑ Tremor</span></div>
+            </div>
+            <div class="prosody-pill">
+              <div class="prosody-label">Pause Ratio</div>
+              <div class="prosody-val" id="valPause">0.42 <span style="color:#facc15;font-size:10px;">Hesitation</span></div>
+            </div>
+            <div class="prosody-pill">
+              <div class="prosody-label">Speech Rate</div>
+              <div class="prosody-val" id="valRate">2.8 syll/s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 3: Triage Decision, SBAR Handoff & Dispatch Actions -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Triage Decision Support
+        </div>
+        <div class="panel-counter" style="color:#38bdf8;">Deterministic</div>
+      </div>
+
+      <!-- Triage Score Hero -->
+      <div class="triage-hero" id="heroTriageBox">
+        <div class="hero-label">Stress Vulnerability Index (SVI)</div>
+        <div class="hero-score" id="heroDistressScore">0.00 (0%)</div>
+        <div class="hero-status badge-low" id="heroRiskStatus">PRIORITY: LOW RISK</div>
+      </div>
+
+      <!-- Evidence Chips -->
+      <div class="evidence-box">
+        <h4>Identified Danger Markers</h4>
+        <div class="chips-wrap" id="evidenceChipsWrap">
+          <div class="chip chip-threat">⚠️ Explicit Threat: "marideba"</div>
+          <div class="chip chip-threat">⚠️ Weapon Mention: "lathi"</div>
+          <div class="chip">Acoustic Pitch Tremor Elevated</div>
+          <div class="chip">SC/ST PoA Act § 15A Applicable</div>
+        </div>
+      </div>
+
+      <!-- SBAR Dossier Box -->
+      <div class="sbar-box">
+        <div class="sbar-row">
+          <div class="sbar-label">Situation (S)</div>
+          <div class="sbar-val" id="sbarSituation">Caller facing armed intimidation outside residence; high fear and vocal arousal.</div>
+        </div>
+        <div class="sbar-row">
+          <div class="sbar-label">Background (B)</div>
+          <div class="sbar-val" id="sbarBackground">SC/ST PoA Act protection rights invoked. Dialect: Standard Odia.</div>
+        </div>
+        <div class="sbar-row">
+          <div class="sbar-label">Assessment (A)</div>
+          <div class="sbar-val" id="sbarAssessment">High physical threat probability. Vocal tremor + threat vocabulary confirmed.</div>
+        </div>
+        <div class="sbar-row">
+          <div class="sbar-label">Recommendation (R)</div>
+          <div class="sbar-val" id="sbarRecommendation">Immediate 112 police dispatch & human operator line transfer.</div>
+        </div>
+      </div>
+
+      <!-- Operator Dispatch Actions -->
+      <div class="action-stack">
+        <button class="btn btn-emergency" onclick="trigger112Dispatch()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          🚨 Bridge to 112 CAD Emergency
+        </button>
+        <button class="btn btn-takeover" onclick="takeoverCall()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+          👤 Instant Human Operator Takeover
+        </button>
+        <a class="btn btn-outline" href="/test" target="_blank">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          Open Mic Dev Test Console (/test)
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Live Animated Waveform Canvas
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    let animationFrame;
+    let phase = 0;
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth - 28;
+      canvas.height = 60;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawWave() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#06b6d4';
+
+      const sliceWidth = canvas.width / 100;
+      let x = 0;
+
+      for (let i = 0; i < 100; i++) {
+        const v = Math.sin(i * 0.15 + phase) * Math.cos(i * 0.05 + phase * 0.5);
+        const y = (canvas.height / 2) + (v * 18);
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+
+        x += sliceWidth;
+      }
+      ctx.stroke();
+      phase += 0.08;
+      requestAnimationFrame(drawWave);
+    }
+    drawWave();
+
+    // WebSocket Live Dashboard Telemetry Connection
+    let ws;
+    function connectDashboardWS() {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${proto}//${window.location.host}/ws/dashboard`;
+      
+      console.log("[Dashboard] Connecting to WebSocket:", wsUrl);
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log("[Dashboard] Connected to real-time dispatch stream.");
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          handleLiveEvent(msg);
+        } catch (e) {
+          console.error("[Dashboard] Message parsing error:", e);
+        }
+      };
+
+      ws.onclose = () => {
+        console.warn("[Dashboard] WS disconnected. Reconnecting in 3 seconds...");
+        setTimeout(connectDashboardWS, 3000);
+      };
+    }
+
+    function handleLiveEvent(payload) {
+      const ev = payload.event;
+      const data = payload.data;
+
+      if (ev === "call_telemetry") {
+        updateCallTelemetry(data);
+      } else if (ev === "agent_response") {
+        appendAgentResponse(data);
+      } else if (ev === "call_started") {
+        console.log("[Dashboard] Call started:", data);
+        document.getElementById('statActiveCalls').innerText = "1";
+      } else if (ev === "call_ended") {
+        console.log("[Dashboard] Call ended:", data);
+      }
+    }
+
+    function updateCallTelemetry(data) {
+      if (data.call_id) {
+        document.getElementById('sessionHeaderId').innerText = `Call: ${data.call_id}`;
+      }
+      
+      // Update Transcript
+      if (data.transcript) {
+        appendCallerTranscript(data.transcript, data.language);
+      }
+
+      // Update Emotion Bars
+      if (data.emotion) {
+        const fear = Math.round(data.emotion.prob_fear * 100);
+        const sad = Math.round(data.emotion.prob_sadness * 100);
+        const anger = Math.round(data.emotion.prob_anger * 100);
+        const neutral = Math.round(data.emotion.prob_neutral * 100);
+
+        document.getElementById('barFear').style.width = fear + '%';
+        document.getElementById('valFear').innerText = fear + '%';
+
+        document.getElementById('barSad').style.width = sad + '%';
+        document.getElementById('valSad').innerText = sad + '%';
+
+        document.getElementById('barAnger').style.width = anger + '%';
+        document.getElementById('valAnger').innerText = anger + '%';
+
+        document.getElementById('barNeutral').style.width = neutral + '%';
+        document.getElementById('valNeutral').innerText = neutral + '%';
+      }
+
+      // Update Acoustic Features
+      if (data.acoustic) {
+        document.getElementById('valF0').innerHTML = `${Math.round(data.acoustic.mean_pitch_f0)} Hz`;
+        document.getElementById('valJitter').innerHTML = `${data.acoustic.jitter.toFixed(4)}`;
+        document.getElementById('valPause').innerHTML = `${data.acoustic.pause_ratio.toFixed(2)}`;
+        document.getElementById('valRate').innerHTML = `${data.acoustic.speech_rate.toFixed(1)} syll/s`;
+      }
+
+      // Update Risk Assessment Hero (PS 26093 SVI)
+      if (data.risk) {
+        const svi = data.svi_score ?? data.risk.svi_score ?? data.risk.risk_score;
+        const sviPct = data.svi_percentage ?? data.risk.svi_percentage ?? Math.round(svi * 100);
+        const level = data.risk.risk_level;
+        document.getElementById('heroDistressScore').innerText = `${svi.toFixed(2)} (${sviPct}%)`;
+        document.getElementById('heroRiskStatus').innerText = `PRIORITY: ${level} RISK`;
+        document.getElementById('cardRiskBadge').innerText = level;
+
+        const heroBox = document.getElementById('heroTriageBox');
+        heroBox.className = "triage-hero " + (level === "LOW" ? "low-risk" : "");
+
+        const badge = document.getElementById('cardRiskBadge');
+        badge.className = `badge-risk badge-${level.toLowerCase()}`;
+
+        if (data.risk.requires_human_escalation || level === "CRITICAL") {
+          document.getElementById('statEscalations').innerText = "1";
+          document.getElementById('activeCallCard').classList.add("critical");
+        }
+      }
+
+      // Update SBAR Handoff if present
+      if (data.handoff && data.handoff.sbar) {
+        document.getElementById('sbarSituation').innerText = data.handoff.sbar.situation;
+        document.getElementById('sbarBackground').innerText = data.handoff.sbar.background;
+        document.getElementById('sbarAssessment').innerText = data.handoff.sbar.assessment;
+        document.getElementById('sbarRecommendation').innerText = data.handoff.sbar.recommendation;
+      }
+
+      // Update Evidence & Mandated Trauma Indicator Chips (PS 26093)
+      const wrap = document.getElementById('evidenceChipsWrap');
+      wrap.innerHTML = '';
+
+      const flags = data.safety_flags || (data.risk && data.risk.safety_flags) || {};
+      const indicatorTags = [];
+      if (flags.severe_trauma) indicatorTags.push("⚠️ Severe Trauma / Atrocity");
+      if (flags.fear_anxiety) indicatorTags.push("😰 Fear & Acute Anxiety");
+      if (flags.depression_indicator) indicatorTags.push("🌧️ Depression / Hopelessness");
+      if (flags.suicidal_ideation || flags.self_harm_indicator) indicatorTags.push("🚨 Suicidal Ideation / Self-Harm");
+      if (flags.intimidation_threat) indicatorTags.push("🗡️ Active Intimidation / Threats");
+      if (flags.social_boycott_isolation) indicatorTags.push("🚫 Social Boycott / Caste Exclusion");
+      if (flags.extreme_vulnerability) indicatorTags.push("🛑 Extreme Vulnerability");
+
+      const allChips = indicatorTags.concat(data.evidence || []);
+      if (allChips.length > 0) {
+        allChips.forEach(evItem => {
+          const chip = document.createElement('div');
+          chip.className = 'chip chip-threat';
+          chip.innerText = evItem.startsWith("⚠️") || evItem.startsWith("😰") || evItem.startsWith("🌧️") || evItem.startsWith("🚨") || evItem.startsWith("🗡️") || evItem.startsWith("🚫") || evItem.startsWith("🛑") ? evItem : `⚠️ ${evItem}`;
+          wrap.appendChild(chip);
+        });
+      } else {
+        wrap.innerHTML = '<div class="chip">Standard baseline — No immediate hazard flags</div>';
+      }
+    }
+
+    function appendCallerTranscript(text, lang) {
+      const feed = document.getElementById('transcriptFeed');
+      const div = document.createElement('div');
+      div.className = 'bubble bubble-caller';
+      div.innerHTML = `<div class="bubble-meta"><span>Caller (${lang || 'Odia'})</span></div>${text}`;
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function appendAgentResponse(data) {
+      const feed = document.getElementById('transcriptFeed');
+      const div = document.createElement('div');
+      div.className = 'bubble bubble-agent';
+      div.innerHTML = `<div class="bubble-meta"><span>NHAA Voice Agent (14566)</span></div>${data.text}`;
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function trigger112Dispatch() {
+      alert("🚨 Emergency Bridge Triggered: Automatic priority packet dispatched to 112 CAD Emergency Response Center with caller telemetry and SBAR report.");
+    }
+
+    function takeoverCall() {
+      alert("👤 Operator Takeover Activated: AI voice synthesis bypassed. Telephone bridge transferred to Officer Mishra (NHAA Central Desk #04).");
+    }
+
+    function selectCall(id) {
+      console.log("Selected call:", id);
+    }
+
+    // Connect WebSocket when page loads
+    window.onload = connectDashboardWS;
+  </script>
+</body>
+</html>
