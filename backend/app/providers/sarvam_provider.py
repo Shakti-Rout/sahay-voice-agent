@@ -19,6 +19,15 @@ class SarvamProvider(SpeechToTextProvider, TextToSpeechProvider):
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.fallback = MockSpeechProvider()
+        self._client: Optional[httpx.AsyncClient] = None
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(
+                timeout=12.0,
+                limits=httpx.Limits(max_keepalive_connections=20, max_connections=40, keepalive_expiry=120.0)
+            )
+        return self._client
 
     async def transcribe(
         self, audio_bytes: bytes, sample_rate: int = 16000, language_code: Optional[str] = None
@@ -45,30 +54,30 @@ class SarvamProvider(SpeechToTextProvider, TextToSpeechProvider):
             audio_bytes = buf.getvalue()
 
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                files = {"file": ("audio.wav", audio_bytes, "audio/wav")}
-                data = {"model": "saaras:v3"}
-                if language_code:
-                    # Sarvam uses 'od-IN' for Odia
-                    mapped_lang = "od-IN" if "or" in language_code.lower() else language_code
-                    data["language_code"] = mapped_lang
+            client = self._get_client()
+            files = {"file": ("audio.wav", audio_bytes, "audio/wav")}
+            data = {"model": "saaras:v3"}
+            if language_code:
+                # Sarvam uses 'od-IN' for Odia
+                mapped_lang = "od-IN" if "or" in language_code.lower() else language_code
+                data["language_code"] = mapped_lang
 
-                response = await client.post(url, headers=headers, files=files, data=data)
+            response = await client.post(url, headers=headers, files=files, data=data)
 
-                if response.status_code == 200:
-                    result = response.json()
-                    transcript = result.get("transcript", "")
-                    detected_lang = result.get("language_code", language_code or "od-IN")
-                    if "od" in detected_lang:
-                        detected_lang = "or-IN"
-                    if transcript.strip():
-                        return transcript, detected_lang, 0.95
-                    else:
-                        logger.info("[SarvamProvider] Audio contained no recognizable human words (silence/ambient noise).")
-                        return "", detected_lang, 0.0
+            if response.status_code == 200:
+                result = response.json()
+                transcript = result.get("transcript", "")
+                detected_lang = result.get("language_code", language_code or "od-IN")
+                if "od" in detected_lang:
+                    detected_lang = "or-IN"
+                if transcript.strip():
+                    return transcript, detected_lang, 0.95
                 else:
-                    logger.warning(f"[SarvamProvider] STT API Error {response.status_code}: {response.text}")
-                    return "", language_code or "or-IN", 0.0
+                    logger.info("[SarvamProvider] Audio contained no recognizable human words (silence/ambient noise).")
+                    return "", detected_lang, 0.0
+            else:
+                logger.warning(f"[SarvamProvider] STT API Error {response.status_code}: {response.text}")
+                return "", language_code or "or-IN", 0.0
 
         except Exception as e:
             logger.error(f"[SarvamProvider] STT Request Exception: {e}")
@@ -100,7 +109,7 @@ class SarvamProvider(SpeechToTextProvider, TextToSpeechProvider):
             "target_language_code": mapped_lang,
             "speaker": speaker,
             "pitch": 0,
-            "pace": 0.95,  # Slightly deliberate pace for trauma reassurance
+            "pace": 1.0,  # Natural conversational voice cadence
             "loudness": 1.0,
             "speech_sample_rate": 16000,
             "enable_preprocessing": True,
@@ -108,18 +117,18 @@ class SarvamProvider(SpeechToTextProvider, TextToSpeechProvider):
         }
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(url, headers=headers, json=payload)
+            client = self._get_client()
+            response = await client.post(url, headers=headers, json=payload)
 
-                if response.status_code == 200:
-                    result = response.json()
-                    audios = result.get("audios", [])
-                    if audios and len(audios) > 0:
-                        audio_base64 = audios[0]
-                        return base64.b64decode(audio_base64)
+            if response.status_code == 200:
+                result = response.json()
+                audios = result.get("audios", [])
+                if audios and len(audios) > 0:
+                    audio_base64 = audios[0]
+                    return base64.b64decode(audio_base64)
 
-                logger.warning(f"[SarvamProvider] TTS API Error {response.status_code}: {response.text}")
-                return await self.fallback.synthesize(text, language_code, speaker_gender)
+            logger.warning(f"[SarvamProvider] TTS API Error {response.status_code}: {response.text}")
+            return await self.fallback.synthesize(text, language_code, speaker_gender)
 
         except Exception as e:
             logger.error(f"[SarvamProvider] TTS Request Exception: {e}. Using fallback.")

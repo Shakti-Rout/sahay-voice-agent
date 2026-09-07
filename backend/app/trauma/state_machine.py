@@ -149,7 +149,7 @@ class ConversationStateManager:
             f"3. LATER TURNS (Turn 4+): Provide concrete assistance or state that a supervisor transfer is being completed directly on this call.\n"
             f"4. NO TOLL-FREE NUMBERS: NEVER tell the caller to dial 14566 or 112 because they are already on this active call!\n"
             f"5. ANTI-REPETITION: Never repeat boilerplate phrases like 'daya kari bhaya karantu nahi' or 'surakshita sthana re achhanti ki' if already said or inappropriate.\n"
-            f"6. SPOKEN SPEECH ONLY: No markdown formatting (**bold**, # headers, bullet points). Maximum 35 words for natural voice synthesis."
+            f"6. SPOKEN SPEECH ONLY: No markdown formatting (**bold**, # headers, bullet points). Maximum 18 to 22 words (1 to 2 crisp, compassionate sentences). Keep it brief, natural, and immediate for voice conversation."
         )
 
     def get_fallback_phrase(self, language_code: str, state: ConversationState) -> str:

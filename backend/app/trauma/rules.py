@@ -88,29 +88,39 @@ class SafetyRulesEngine:
         evidence: List[str] = []
 
         # 1. Check for immediate critical triggers
+        critical_matched = False
         for trigger in cls.CRITICAL_TRIGGERS:
             if trigger in text_lower:
+                critical_matched = True
                 evidence.append(f"Immediate Critical Safety Trigger: '{trigger}'")
                 current_flags.immediate_danger = True
+                if trigger in ["talwar", "banduk", "gun", "knife", "chaku", "lathi", "ଲାଠି", "ବନ୍ଧୁକ", "ଛୁରୀ", "ଖଣ୍ଡା", "बंदूक", "चाकू", "तलवार", "लाठी"]:
+                    current_flags.weapon_present = True
                 if trigger in ["suicide", "mariba", "end my life", "jeeban haridebi", "ଆତ୍ମହତ୍ୟା", "ଜୀବନ ହାରି", "आत्महत्या"]:
                     current_flags.self_harm_indicator = True
                     current_flags.suicidal_ideation = True
-                if trigger in ["talwar", "banduk", "gun", "knife", "chaku", "ଲାଠି", "ବନ୍ଧୁକ", "ଛୁରୀ", "ଖଣ୍ଡା", "बंदूक", "चाकू", "तलवार"]:
-                    current_flags.weapon_present = True
                 if trigger in ["rape", "gang rape", "murder", "hatya", "balatkar", "killed", "ହତ୍ୟା", "ବଳାତ୍କାର", "हत्या", "बलात्कार"]:
                     current_flags.severe_trauma = True
 
-                return RiskLevel.CRITICAL, True, evidence
+        # Explicitly verify weapon keywords in text to guarantee flag setting
+        if any(w in text_lower for w in ["talwar", "banduk", "gun", "knife", "chaku", "lathi", "ଲାଠି", "ବନ୍ଧୁକ", "ଛୁରୀ", "ଖଣ୍ଡା", "बंदूक", "चाकू", "तलवार", "लाठी"]):
+            current_flags.weapon_present = True
+
+        if critical_matched:
+            return RiskLevel.CRITICAL, True, evidence
 
         # 2. Check for high-level threats
+        high_matched = False
         for trigger in cls.HIGH_TRIGGERS:
             if trigger in text_lower:
+                high_matched = True
                 evidence.append(f"High-Level Threat Trigger: '{trigger}'")
                 if trigger in ["boycott", "pani nebaku mana", "samaja ru bahiskara", "ବାସନ୍ଦ", "ପାଣି ମନା", "ସମାଜରୁ ବହିଷ୍କାର", "सामाजिक बहिष्कार", "पानी बंद"]:
                     current_flags.social_boycott_isolation = True
                 if trigger in ["dhamaka", "dhamki", "threat", "marideba", "kill you", "ଧମକ", "ଧମକା", "ମାରିଦେବା", "धमकी", "जान से मार", "मार दूंगा"]:
                     current_flags.intimidation_threat = True
 
-                return RiskLevel.HIGH, True, evidence
+        if high_matched:
+            return RiskLevel.HIGH, True, evidence
 
         return RiskLevel.LOW, False, evidence

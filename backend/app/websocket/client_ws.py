@@ -106,10 +106,16 @@ class ClientAudioSession:
                 self.vad.reset()
                 asyncio.create_task(self._process_utterance(utterance_bytes, websocket))
         else:
-            # End of utterance triggered after 1.0s silence hangover
-            # Require at least 400ms (16000 * 2 * 0.4 = 12800 bytes) of recorded speech to prevent ambient clicks
-            if len(self.audio_buffer) >= int(16000 * 2 * 0.4):
-                utterance_bytes = bytes(self.audio_buffer)
+            # End of utterance triggered after ~500ms silence hangover
+            # Require at least 350ms of recorded speech to prevent ambient clicks
+            if len(self.audio_buffer) >= int(16000 * 2 * 0.35):
+                # Trim trailing silence (~350ms) so STT doesn't waste time transcribing dead air
+                trailing_silence_bytes = int(16000 * 2 * 0.35)
+                if len(self.audio_buffer) > trailing_silence_bytes + int(16000 * 2 * 0.25):
+                    utterance_bytes = bytes(self.audio_buffer[:-trailing_silence_bytes])
+                else:
+                    utterance_bytes = bytes(self.audio_buffer)
+
                 self.audio_buffer.clear()
                 self.vad.reset()
 
@@ -123,7 +129,7 @@ class ClientAudioSession:
 
     async def _execute_turn(self, audio_bytes: bytes, websocket: WebSocket) -> None:
         try:
-            # 0. Multi-frame Acoustic Horn & Siren Scanner across the complete utterance
+            # 0. Fast Acoustic Horn & Siren Scanner across the utterance (hop_size=1024 for sub-2ms check)
             samples = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32)
             horn_frames = 0
             active_frames = 0
@@ -131,7 +137,7 @@ class ClientAudioSession:
 
             if len(samples) >= 512:
                 frame_size = 512
-                hop_size = 256
+                hop_size = 1024
                 hanning_w = np.hanning(frame_size)
 
                 for i in range(0, len(samples) - frame_size + 1, hop_size):

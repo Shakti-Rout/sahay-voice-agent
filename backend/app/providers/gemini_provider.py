@@ -37,6 +37,15 @@ class GeminiProvider(LLMProvider):
         self.api_key = api_key
         self.model = model if model.startswith("models/") else f"models/{model}"
         self.base_url = "https://generativelanguage.googleapis.com/v1beta"
+        self._client: Optional[httpx.AsyncClient] = None
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(
+                timeout=8.0,
+                limits=httpx.Limits(max_keepalive_connections=20, max_connections=40, keepalive_expiry=120.0)
+            )
+        return self._client
 
     async def generate_response(
         self,
@@ -78,27 +87,27 @@ class GeminiProvider(LLMProvider):
             "contents": contents,
             "systemInstruction": system_instruction_payload,
             "generationConfig": {
-                "temperature": 0.35,  # Balanced temperature for trauma assistance
-                "maxOutputTokens": 350,  # Ensure full Odia/Hindi sentences without truncation
-                "topP": 0.85
+                "temperature": 0.25,  # Low temperature for direct, fast, deterministic voice responses
+                "maxOutputTokens": 100,  # Strict token budget for sub-second decoding
+                "topP": 0.80
             }
         }
 
         try:
-            async with httpx.AsyncClient(timeout=12.0) as client:
-                response = await client.post(url, json=payload)
+            client = self._get_client()
+            response = await client.post(url, json=payload)
 
-                if response.status_code == 200:
-                    data = response.json()
-                    candidates = data.get("candidates", [])
-                    if candidates:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts:
-                            raw_text = parts[0].get("text", "").strip()
-                            return clean_spoken_text(raw_text)
+            if response.status_code == 200:
+                data = response.json()
+                candidates = data.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts:
+                        raw_text = parts[0].get("text", "").strip()
+                        return clean_spoken_text(raw_text)
 
-                logger.warning(f"[GeminiProvider] API Error {response.status_code}: {response.text}")
-                return self._get_fallback_response(system_instructions)
+            logger.warning(f"[GeminiProvider] API Error {response.status_code}: {response.text}")
+            return self._get_fallback_response(system_instructions)
 
         except Exception as e:
             logger.error(f"[GeminiProvider] Exception: {e}")
