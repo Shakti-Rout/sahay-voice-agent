@@ -325,8 +325,17 @@
       <!-- Language Selector -->
       <div style="display: flex; gap: 8px; align-items: center; justify-content: center; margin-bottom: 12px; flex-wrap: wrap;">
         <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Preferred Language:</span>
-        <button type="button" id="langBtnOdia" class="tag-pill" style="cursor: pointer; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700; padding: 6px 14px;" onclick="selectLanguage('or-IN')">
-          🇮🇳 ଓଡ଼ିଆ (Odia - Default)
+        <button type="button" id="langBtnAuto" class="tag-pill" style="cursor: pointer; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700; padding: 6px 14px;" onclick="selectLanguage('unknown')">
+          ⚡ Auto-Detect (Sarvam 22+ & Tribal)
+        </button>
+        <button type="button" id="langBtnOdia" class="tag-pill" style="cursor: pointer; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-weight: 400; padding: 6px 14px;" onclick="selectLanguage('or-IN')">
+          🇮🇳 ଓଡ଼ିଆ (Odia)
+        </button>
+        <button type="button" id="langBtnSambalpuri" class="tag-pill" style="cursor: pointer; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-weight: 400; padding: 6px 14px;" onclick="selectLanguage('sp-IN')">
+          🌾 ସମ୍ବଲପୁରୀ (Sambalpuri)
+        </button>
+        <button type="button" id="langBtnSantali" class="tag-pill" style="cursor: pointer; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-weight: 400; padding: 6px 14px;" onclick="selectLanguage('sat-IN')">
+          🏹 ᱥᱟᱱᱛᱟᱲᱤ (Santali)
         </button>
         <button type="button" id="langBtnHindi" class="tag-pill" style="cursor: pointer; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-weight: 400; padding: 6px 14px;" onclick="selectLanguage('hi-IN')">
           हिंदी (Hindi)
@@ -1081,38 +1090,55 @@
       }
     }
 
-    let selectedLanguage = "or-IN";
+    let selectedLanguage = "unknown";
 
     function selectLanguage(langCode) {
       selectedLanguage = langCode;
+      const btnAuto = document.getElementById("langBtnAuto");
       const btnOdia = document.getElementById("langBtnOdia");
+      const btnSambalpuri = document.getElementById("langBtnSambalpuri");
+      const btnSantali = document.getElementById("langBtnSantali");
       const btnHindi = document.getElementById("langBtnHindi");
       const btnEnglish = document.getElementById("langBtnEnglish");
 
-      if (btnOdia && btnHindi && btnEnglish) {
-        [btnOdia, btnHindi, btnEnglish].forEach(b => {
-          b.style.background = "rgba(255, 255, 255, 0.05)";
-          b.style.borderColor = "rgba(255, 255, 255, 0.15)";
-          b.style.color = "#cbd5e1";
-          b.style.fontWeight = "400";
-        });
+      const allBtns = [btnAuto, btnOdia, btnSambalpuri, btnSantali, btnHindi, btnEnglish].filter(Boolean);
+      allBtns.forEach(b => {
+        b.style.background = "rgba(255, 255, 255, 0.05)";
+        b.style.borderColor = "rgba(255, 255, 255, 0.15)";
+        b.style.color = "#cbd5e1";
+        b.style.fontWeight = "400";
+      });
 
-        if (langCode === "or-IN") {
-          btnOdia.style.background = "rgba(56, 189, 248, 0.2)";
-          btnOdia.style.borderColor = "#38bdf8";
-          btnOdia.style.color = "#38bdf8";
-          btnOdia.style.fontWeight = "700";
-        } else if (langCode === "hi-IN") {
-          btnHindi.style.background = "rgba(245, 158, 11, 0.2)";
-          btnHindi.style.borderColor = "#f59e0b";
-          btnHindi.style.color = "#f59e0b";
-          btnHindi.style.fontWeight = "700";
-        } else {
-          btnEnglish.style.background = "rgba(16, 185, 129, 0.2)";
-          btnEnglish.style.borderColor = "#10b981";
-          btnEnglish.style.color = "#10b981";
-          btnEnglish.style.fontWeight = "700";
-        }
+      if (langCode === "unknown" && btnAuto) {
+        btnAuto.style.background = "rgba(56, 189, 248, 0.2)";
+        btnAuto.style.borderColor = "#38bdf8";
+        btnAuto.style.color = "#38bdf8";
+        btnAuto.style.fontWeight = "700";
+      } else if (langCode === "or-IN" && btnOdia) {
+        btnOdia.style.background = "rgba(56, 189, 248, 0.2)";
+        btnOdia.style.borderColor = "#38bdf8";
+        btnOdia.style.color = "#38bdf8";
+        btnOdia.style.fontWeight = "700";
+      } else if (langCode === "sp-IN" && btnSambalpuri) {
+        btnSambalpuri.style.background = "rgba(168, 85, 247, 0.2)";
+        btnSambalpuri.style.borderColor = "#a855f7";
+        btnSambalpuri.style.color = "#c084fc";
+        btnSambalpuri.style.fontWeight = "700";
+      } else if (langCode === "sat-IN" && btnSantali) {
+        btnSantali.style.background = "rgba(234, 179, 8, 0.2)";
+        btnSantali.style.borderColor = "#eab308";
+        btnSantali.style.color = "#fde047";
+        btnSantali.style.fontWeight = "700";
+      } else if (langCode === "hi-IN" && btnHindi) {
+        btnHindi.style.background = "rgba(245, 158, 11, 0.2)";
+        btnHindi.style.borderColor = "#f59e0b";
+        btnHindi.style.color = "#f59e0b";
+        btnHindi.style.fontWeight = "700";
+      } else if (btnEnglish) {
+        btnEnglish.style.background = "rgba(16, 185, 129, 0.2)";
+        btnEnglish.style.borderColor = "#10b981";
+        btnEnglish.style.color = "#10b981";
+        btnEnglish.style.fontWeight = "700";
       }
 
       if (ws && ws.readyState === WebSocket.OPEN) {
