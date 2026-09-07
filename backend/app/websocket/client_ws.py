@@ -173,9 +173,12 @@ class ClientAudioSession:
                     return
 
             # 1. Parallel Speech Perception & Feature Extraction
-            current_lang = self.language_router.get_session_language(self.call_id)
-            # Default to Odia ('od-IN') for NHAA helpline unless caller selects or switches
-            mapped_lang = "od-IN" if "or" in current_lang.value.lower() else current_lang.value
+            # On Turn 1 (first caller turn after greeting), allow Sarvam Saaras v3 to auto-detect language across all 22 Indian languages
+            if self.turn_count == 0:
+                mapped_lang = "unknown"
+            else:
+                current_lang = self.language_router.get_session_language(self.call_id)
+                mapped_lang = "od-IN" if "or" in current_lang.value.lower() else current_lang.value
 
             stt_task = asyncio.create_task(self.sarvam.transcribe(audio_bytes, 16000, language_code=mapped_lang))
             acoustic_task = asyncio.create_task(self.acoustic_extractor.extract(audio_bytes, 16000))
@@ -197,13 +200,21 @@ class ClientAudioSession:
 
             # Speech confirmed! Increment valid turn count
             self.turn_count += 1
-            logger.info(f"[Session {self.call_id}] Starting turn {self.turn_count} perception: '{raw_transcript}'")
+            logger.info(f"[Session {self.call_id}] Starting turn {self.turn_count} perception: '{raw_transcript}' (Sarvam detected lang: {raw_detected_lang})")
 
             # 2. Language Routing & Dialect Normalization
             detected_lang_enum, detected_conf = self.language_router.detect_language_from_text(raw_transcript)
-            active_lang = self.language_router.update_session_language(
-                self.call_id, detected_lang_enum.value, detected_conf
-            )
+            # If Sarvam detected a language with high confidence and text isn't a specialized tribal dialect
+            if raw_detected_lang and raw_detected_lang not in ["unknown", "und"] and detected_lang_enum not in [SupportedLanguage.SAMBALPURI, SupportedLanguage.SANTALI]:
+                sarvam_enum = self.language_router.normalize_language_code(raw_detected_lang)
+                active_lang = self.language_router.update_session_language(
+                    self.call_id, sarvam_enum.value, 0.92
+                )
+            else:
+                active_lang = self.language_router.update_session_language(
+                    self.call_id, detected_lang_enum.value, detected_conf
+                )
+
             normalized_transcript = DialectBridge.normalize_dialect(raw_transcript, active_lang.value)
 
             self.full_transcript.append({"role": "caller", "content": raw_transcript})
@@ -308,7 +319,8 @@ class ClientAudioSession:
             system_instructions = self.state_machine.get_system_prompt_for_state(
                 state=conv_state,
                 language_code=active_lang.value,
-                risk_level=assessment.risk_level.value
+                risk_level=assessment.risk_level.value,
+                latest_transcript=normalized_transcript
             )
 
             try:
@@ -322,13 +334,13 @@ class ClientAudioSession:
                 )
             except asyncio.TimeoutError:
                 logger.warning(f"[Session {self.call_id}] Gemini response timed out; using state-specific protocol.")
-                raw_ai_response = self.state_machine.get_fallback_phrase(active_lang.value, conv_state)
+                raw_ai_response = self.state_machine.get_fallback_phrase(active_lang.value, conv_state, latest_transcript=normalized_transcript)
             except Exception as e:
                 logger.warning(f"[Session {self.call_id}] Gemini generation exception: {e}; using fallback.")
-                raw_ai_response = self.state_machine.get_fallback_phrase(active_lang.value, conv_state)
+                raw_ai_response = self.state_machine.get_fallback_phrase(active_lang.value, conv_state, latest_transcript=normalized_transcript)
 
             # 11. Post-generation Safety Validation
-            safe_response, is_valid = SafetyValidator.validate(raw_ai_response, active_lang.value)
+            safe_response, is_valid = SafetyValidator.validate(raw_ai_response, active_lang.value, caller_transcript=normalized_transcript)
             self.conversation_history.append({"role": "agent", "content": safe_response})
             self.full_transcript.append({"role": "agent", "content": safe_response})
 

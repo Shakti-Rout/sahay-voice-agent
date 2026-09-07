@@ -2,6 +2,9 @@
 Conversational State Machine for Trauma Voice Agent.
 Guides the interaction through structured clinical-safety phases:
 GREETING -> PROBLEM_ASSESSMENT -> EMPATHY_GROUNDING -> SUPPORT_VERIFICATION -> ESCALATION_HANDOFF / CONCLUSION
+
+Includes strict Spatial Environment Grounding (Wilderness/Forest vs Indoor)
+to prevent inappropriate hallucinations (e.g. telling forest callers to lock doors).
 """
 
 from enum import Enum
@@ -69,21 +72,100 @@ class ConversationStateManager:
         self.session_states[call_id] = new_state
         return new_state
 
+    @staticmethod
+    def detect_environment(text: str) -> Dict[str, bool]:
+        """Detect the caller's physical environment and pursuit state from transcript."""
+        t = (text or "").lower()
+        is_wilderness = any(w in t for w in [
+            "jangala", "bana", "bir", "dongar", "pahar", "nadi", "khet", "jami", "jungle", "forest",
+            "ଜଙ୍ଗଲ", "ବଣ", "ପାହାଡ଼", "ନଈ", "ଖେତ", "जंगल", "पहाड़", "नदी", "खेत"
+        ])
+        is_outdoor_public = any(w in t for w in [
+            "rasta", "sadak", "gali", "bata", "bazar", "highway", "road", "dahar",
+            "ରାସ୍ତା", "ଗଳି", "ବଜାର", "सड़क", "रास्ता", "गली", "बाजार"
+        ])
+        is_pursuit = any(w in t for w in [
+            "godauchanti", "godauchhan", "godauchhe", "panjayedina", "pache", "chasing",
+            "pache padichhanti", "mariba pain", "gojing", "khojuchhanti",
+            "ଗୋଡ଼ାଉଛନ୍ତି", "ମାରିବାକୁ ଖୋଜୁଛନ୍ତି", "ଦୌଡ଼ାଉଛନ୍ତି", "दौड़ा रहे", "पीछे पड़े", "जान से मारने"
+        ])
+        is_indoors = any(w in t for w in [
+            "ghara", "ghar", "kothari", "kamra", "room", "house", "orak", "office", "dukan",
+            "ଘର", "କୋଠରୀ", "घर", "कमरा"
+        ]) and not (is_wilderness or is_pursuit)
+
+        return {
+            "wilderness": is_wilderness,
+            "outdoor_public": is_outdoor_public,
+            "pursuit": is_pursuit,
+            "indoors": is_indoors
+        }
+
     def get_system_prompt_for_state(
         self,
         state: ConversationState,
         language_code: str,
-        risk_level: str
+        risk_level: str,
+        latest_transcript: str = ""
     ) -> str:
-        """Returns prompt guidance conditioned on current conversation phase."""
-        is_odia = "or" in language_code.lower() or "od" in language_code.lower()
-        is_hindi = "hi" in language_code.lower()
+        """Returns prompt guidance conditioned on current conversation phase and spatial environment."""
+        lc = (language_code or "or-IN").lower()
 
-        base_lang_instruction = (
-            "You MUST speak in natural, empathetic, spoken ODIA. Directly address the caller's specific problem." if is_odia else
-            "You MUST speak in natural, empathetic, spoken HINDI. Directly address the caller's specific problem." if is_hindi else
-            "You MUST speak in natural, empathetic, spoken INDIAN ENGLISH. Directly address the caller's specific problem."
-        )
+        # Language guidance for all Sarvam supported languages + dialects
+        if "sp" in lc or "sambalpur" in lc or "kosli" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken SAMBALPURI / KOSLI ODIA. Directly address the caller's specific situation."
+        elif "sat" in lc or "santali" in lc:
+            base_lang_instruction = "You MUST speak in simple, reassuring ODIA or Santali-contact phrasing. Directly address the caller's specific situation."
+        elif "or" in lc or "od" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken ODIA. Directly address the caller's specific problem."
+        elif "hi" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken HINDI. Directly address the caller's specific problem."
+        elif "bn" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken BENGALI. Directly address the caller's specific problem."
+        elif "te" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken TELUGU. Directly address the caller's specific problem."
+        elif "mr" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken MARATHI. Directly address the caller's specific problem."
+        elif "ta" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken TAMIL. Directly address the caller's specific problem."
+        elif "gu" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken GUJARATI. Directly address the caller's specific problem."
+        elif "kn" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken KANNADA. Directly address the caller's specific problem."
+        elif "pa" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken PUNJABI. Directly address the caller's specific problem."
+        elif "ml" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken MALAYALAM. Directly address the caller's specific problem."
+        else:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken INDIAN ENGLISH. Directly address the caller's specific problem."
+
+        # Detect spatial environment from the caller's speech
+        env = self.detect_environment(latest_transcript)
+        if env["wilderness"] or env["pursuit"]:
+            spatial_mandate = (
+                "CRITICAL SPATIAL MANDATE — CALLER IS OUTDOORS IN JUNGLE/WILDERNESS OR BEING PURSUED:\n"
+                "- ABSOLUTE BAN: NEVER tell the caller to lock house doors, stay in a room, or close windows! There are no doors in a forest or outdoor pursuit.\n"
+                "- REAL-WORLD SURVIVAL DIRECTIVES:\n"
+                "  1. Tell them to stay low, concealed in the bushes/trees, and stay calm and quiet.\n"
+                "  2. Instruct them to immediately put their phone on SILENT mode so sounds or screen light do not give away their position to pursuers.\n"
+                "  3. Ask them in a gentle whisper to state their approximate location or any nearby landmark (river, road, village border, electricity tower) so emergency police (112) can locate them.\n"
+                "  4. Confirm that emergency rescue is being dispatched right now to their vicinity."
+            )
+        elif env["indoors"]:
+            spatial_mandate = (
+                "SPATIAL MANDATE — CALLER IS INDOORS:\n"
+                "- Advise them to bolt and lock the doors, stay away from windows, turn off room lights, and stay silent while police is coordinated."
+            )
+        elif env["outdoor_public"]:
+            spatial_mandate = (
+                "SPATIAL MANDATE — CALLER IS ON A ROAD / PUBLIC STREET:\n"
+                "- Advise them to move toward a populated public area, police outpost, or well-lit shop if safe, or take shelter while 112 is dispatched."
+            )
+        else:
+            spatial_mandate = (
+                "SPATIAL MANDATE:\n"
+                "- Match all physical safety advice directly to the caller's stated location. Do not invent indoor doors or furniture unless caller explicitly said they are at home."
+            )
 
         state_guidance = {
             ConversationState.GREETING: (
@@ -125,14 +207,15 @@ class ConversationStateManager:
             f"{base_lang_instruction}\n"
             f"Assessed Risk Tier: {risk_level}\n"
             f"Conversation Phase: {state.value}\n\n"
+            f"{spatial_mandate}\n\n"
             f"MANDATE — SITUATION & SEVERITY MATCHING (NO DISCONNECTED HALLUCINATIONS):\n"
             f"You are the voice assistant for the National Helpline Against Atrocities (NHAA - 14566) under the Ministry of Social Justice and Empowerment.\n"
             f"You MUST analyze the caller's actual words and dynamically adapt your response to their exact situation:\n"
-            f"1. CATEGORY 1: CRITICAL EMERGENCY (Immediate physical attack, weapons, severe bleeding, ongoing mob violence):\n"
-            f"   - Prioritize physical safety directives (e.g. lock doors, stay hidden).\n"
+            f"1. CATEGORY 1: CRITICAL EMERGENCY (Immediate physical attack, weapons, severe bleeding, ongoing mob violence, active pursuit):\n"
             f"   - Keep response calm, urgent, and concise. State that emergency police/medical units are being coordinated right now.\n"
+            f"   - Follow the spatial mandate above (never mention locking doors if in forest or outdoors).\n"
             f"2. CATEGORY 2: CASTE ATROCITY / DISCRIMINATION / SOCIAL BOYCOTT / HARASSMENT:\n"
-            f"   - Situations of caste abuse, eviction, boycott ('samaja ru bahiskara', denial of water), threats ('dhamki'), police refusal to register FIR.\n"
+            f"   - Situations of caste abuse, eviction, boycott ('samaja ru bahiskara', denial of water, 'dak nu mana'), threats ('dhamki'), police refusal to register FIR.\n"
             f"   - Validate their pain empathetically with direct reference to their specific incident.\n"
             f"   - Ask focused investigative questions about the perpetrators, location, and injuries.\n"
             f"   - Inform them of their rights under the SC/ST (PoA) Act (Zero FIR, Section 15A witness/victim protection, free legal aid).\n"
@@ -152,9 +235,20 @@ class ConversationStateManager:
             f"6. SPOKEN SPEECH ONLY: No markdown formatting (**bold**, # headers, bullet points). Maximum 18 to 22 words (1 to 2 crisp, compassionate sentences). Keep it brief, natural, and immediate for voice conversation."
         )
 
-    def get_fallback_phrase(self, language_code: str, state: ConversationState) -> str:
+    def get_fallback_phrase(self, language_code: str, state: ConversationState, latest_transcript: str = "") -> str:
         """Provide safe, conversational fallback phrases if LLM call is delayed."""
         lang = (language_code or "or-IN").lower()
+        env = self.detect_environment(latest_transcript)
+
+        # If caller is outdoors or in jungle pursuit, use wilderness-safe fallback
+        if env["wilderness"] or env["pursuit"]:
+            if "hi" in lang:
+                return "Aap shant rahein, phone silent karein aur jungle mein chhipe rahein. Kya aapke paas koi landmark ya sadak hai? Police ko suchit kiya ja raha hai."
+            elif "en" in lang:
+                return "Please stay quiet, silence your phone, and remain hidden. Can you whisper any nearby landmark or road? Emergency police are being dispatched."
+            else:
+                return "Apan shanta ruhantu, phone silent karantu o jangala re nuchiki ruhantu. Pakhare kounasi rasta ba landmark achhi ki? Police ku suchana diajauchi."
+
         if "hi" in lang:
             if state == ConversationState.PROBLEM_ASSESSMENT:
                 return "Main aapki baat sun raha hoon. Kya aap abhi surakshit jagah par hain? Kripya batayein aapke aas paas kaun hai."

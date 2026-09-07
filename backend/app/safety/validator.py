@@ -42,7 +42,7 @@ class SafetyValidator:
     }
 
     @classmethod
-    def validate(cls, text: str, language_code: str = "or") -> Tuple[str, bool]:
+    def validate(cls, text: str, language_code: str = "or", caller_transcript: str = "") -> Tuple[str, bool]:
         """
         Validate generated text.
         Returns: (safe_text, is_clean)
@@ -70,6 +70,23 @@ class SafetyValidator:
                 logger.warning(f"[SafetyValidator] False legal/police promise blocked: {promise}")
                 fallback = cls.SAFE_FALLBACKS.get(language_code, cls.SAFE_FALLBACKS["en"])
                 return fallback, False
+
+        # 4. Check for outdoor / wilderness spatial hallucination
+        ct_lower = (caller_transcript or "").lower()
+        is_wilderness_call = any(w in ct_lower for w in [
+            "jangala", "bana", "bir", "dongar", "pahar", "nadi", "khet", "jungle", "forest",
+            "godauchanti", "godauchhan", "panjayedina", "ଜଙ୍ଗଲ", "ବଣ", "ଗୋଡ଼ାଉଛନ୍ତି"
+        ])
+        if is_wilderness_call:
+            for indoor_term in ["kabata band", "darwaza band", "ghara bhitare", "kamre", "lock the door", "lock door", "କବାଟ ବନ୍ଦ", "ଦରୱାଜା ବନ୍ଦ", "ଘର ଭିତରେ"]:
+                if indoor_term in lower:
+                    logger.warning(f"[SafetyValidator] Spatial hallucination blocked: indoor term '{indoor_term}' during wilderness scenario.")
+                    if "hi" in language_code.lower():
+                        return "Aap shant rahein, phone silent karein aur jungle mein chhipe rahein. Police ko turant suchit kiya ja raha hai.", False
+                    elif "en" in language_code.lower():
+                        return "Please stay calm, silence your phone, and remain hidden in the trees. Emergency police are being alerted.", False
+                    else:
+                        return "Apan shanta ruhantu, phone silent karantu o jangala re nuchiki ruhantu. Police ku turant suchana diajauchi.", False
 
         has_sanitized_number = False
         potential_phones = re.findall(r'(?:\+91[\-\s]?)?[6-9]\d{9}\b|\b0\d{2,4}[-\s]?\d{6,8}\b|\b\d{3,6}\b|[୦-୯]{3,6}|[०-९]{3,6}', validated_text)

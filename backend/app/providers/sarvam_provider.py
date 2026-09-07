@@ -57,10 +57,13 @@ class SarvamProvider(SpeechToTextProvider, TextToSpeechProvider):
             client = self._get_client()
             files = {"file": ("audio.wav", audio_bytes, "audio/wav")}
             data = {"model": "saaras:v3"}
-            if language_code:
+            if language_code and language_code.lower() not in ["unknown", "und"]:
                 # Sarvam uses 'od-IN' for Odia
                 mapped_lang = "od-IN" if "or" in language_code.lower() else language_code
                 data["language_code"] = mapped_lang
+            else:
+                # Let Sarvam Saaras v3 auto-detect across all 22 Indian languages
+                data["language_code"] = "unknown"
 
             response = await client.post(url, headers=headers, files=files, data=data)
 
@@ -68,7 +71,7 @@ class SarvamProvider(SpeechToTextProvider, TextToSpeechProvider):
                 result = response.json()
                 transcript = result.get("transcript", "")
                 detected_lang = result.get("language_code", language_code or "od-IN")
-                if "od" in detected_lang:
+                if "od" in detected_lang.lower():
                     detected_lang = "or-IN"
                 if transcript.strip():
                     return transcript, detected_lang, 0.95
@@ -99,8 +102,33 @@ class SarvamProvider(SpeechToTextProvider, TextToSpeechProvider):
             "Content-Type": "application/json"
         }
 
-        # Map language code (Sarvam uses 'od-IN' for Odia)
-        mapped_lang = "od-IN" if "or" in language_code.lower() else language_code
+        # Map regional/tribal dialects to supported Sarvam TTS models
+        lc = (language_code or "or-IN").lower()
+        if any(d in lc for d in ["or", "od", "sp", "sat", "sambalpur", "santali"]):
+            mapped_lang = "od-IN"
+        elif "hi" in lc:
+            mapped_lang = "hi-IN"
+        elif "en" in lc:
+            mapped_lang = "en-IN"
+        elif "bn" in lc:
+            mapped_lang = "bn-IN"
+        elif "te" in lc:
+            mapped_lang = "te-IN"
+        elif "mr" in lc:
+            mapped_lang = "mr-IN"
+        elif "ta" in lc:
+            mapped_lang = "ta-IN"
+        elif "gu" in lc:
+            mapped_lang = "gu-IN"
+        elif "kn" in lc:
+            mapped_lang = "kn-IN"
+        elif "pa" in lc:
+            mapped_lang = "pa-IN"
+        elif "ml" in lc:
+            mapped_lang = "ml-IN"
+        else:
+            mapped_lang = "od-IN"
+
         speaker = "ritu" if speaker_gender == "female" else "aditya"
 
         # Format inputs for Sarvam bulbul:v3

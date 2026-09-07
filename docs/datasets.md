@@ -52,19 +52,20 @@ data/
 
 #### C. Indian Linguistic Risk Corpus (ILRC - 500 Phrases)
 * **Dataset File**: [`data/processed/indian_linguistic_risk_corpus.csv`](file:///c:/Users/SAMBIT/OneDrive/Documents/My%20Projects/trauma-voice-agent/data/processed/indian_linguistic_risk_corpus.csv)
-* **Specification Provenance**: Generated and structured via [ChatGPT Emergency Prompt Alignment](https://chatgpt.com/share/6a9d86e2-5178-83ee-a3a4-ea19594855ad).
+* **Specification Provenance**: Structured via emergency prompt alignment and validated for Indic regional dialects.
+* **Dialect & Language Coverage**: Includes English, Hindi, Standard Odia, **Sambalpuri (Kosli)**, and **Santali (Tribal Indigenous)**.
 * **Corpus Breakdown (50 Phrases per Category × 10 Domains)**:
-  1. **Immediate Danger** (`ILRC_001` - `ILRC_050`): Imminent physical peril, acute fear, flight response. Severity: `CRITICAL`.
-  2. **Physical Assault** (`ILRC_051` - `ILRC_100`): Active beating, bodily harm, physical battery. Severity: `CRITICAL`.
-  3. **Death Threat** (`ILRC_101` - `ILRC_150`): Direct homicidal intimidation, life peril, lynching threats. Severity: `CRITICAL`.
+  1. **Immediate Danger** (`ILRC_001` - `ILRC_050`): Imminent physical peril, flight response, outdoor wilderness pursuit (`jangala re nuchiki`, `mor pache godauchhan`, `bir re ukanakana`). Severity: `CRITICAL`.
+  2. **Physical Assault** (`ILRC_051` - `ILRC_100`): Active beating, weapons (`lathi`, `talwar`, `kapi`, `hasiyara`), battery (`mor pita`, `dalan kanako`). Severity: `CRITICAL`.
+  3. **Death Threat** (`ILRC_101` - `ILRC_150`): Direct homicidal intimidation, lynching threats (`marba`, `gojing lagid`). Severity: `CRITICAL`.
   4. **Sexual Violence** (`ILRC_151` - `ILRC_200`): Sexual assault, non-consensual restraint, acute violation. Severity: `CRITICAL`.
-  5. **Domestic Violence** (`ILRC_201` - `ILRC_250`): Intimate partner violence, household physical battery. Severity: `HIGH`.
-  6. **Child Endangerment** (`ILRC_251` - `ILRC_300`): Minors under physical threat or abuse. Severity: `CRITICAL`.
-  7. **Kidnapping & Restraint** (`ILRC_301` - `ILRC_350`): Forced confinement, hostage, illegal restraint. Severity: `CRITICAL`.
-  8. **Medical Emergency** (`ILRC_351` - `ILRC_400`): Severe trauma, collapse, respiratory failure, bleeding. Severity: `CRITICAL`.
-  9. **Self-Harm Crisis** (`ILRC_401` - `ILRC_450`): Suicidal ideation, self-injury crisis, hopelessness. Severity: `CRITICAL`.
+  5. **Domestic Violence** (`ILRC_201` - `ILRC_250`): Intimate partner violence, household physical battery (`ghare ghusi`). Severity: `HIGH`.
+  6. **Child Endangerment** (`ILRC_251` - `ILRC_300`): Minors under physical threat or abuse (`pila banchao`, `gidra`). Severity: `CRITICAL`.
+  7. **Social Boycott & Caste Atrocity** (`ILRC_301` - `ILRC_350`): Village expulsion (`khedi dele`, `ato khon ko orok`), drinking water denial (`pani mana`, `dak nu mana`), road blockades (`bata banda`, `dahar bondo`). Severity: `HIGH`.
+  8. **Medical Emergency** (`ILRC_351` - `ILRC_400`): Severe trauma, collapse, respiratory failure, bleeding (`rakata`, `mayang`). Severity: `CRITICAL`.
+  9. **Self-Harm Crisis** (`ILRC_401` - `ILRC_450`): Suicidal ideation, self-injury crisis, hopelessness (`jiban hariba`, `jivi goj`). Severity: `CRITICAL`.
   10. **Emergency Assistance** (`ILRC_451` - `ILRC_500`): Direct requests for police 112, ambulance 108, or rescue. Severity: `HIGH`.
-* **Multilingual Schema**: Each entry includes native script (Odia & Devanagari), Romanized transliterations (e.g. Odialish / Hinglish), extracted keyword tags, urgency level, and expected deterministic protocol action (`SAFETY_ESCALATION`, `MEDICAL_ESCALATION`, `CRISIS_SUPPORT_ESCALATION`).
+* **Multilingual Schema**: Each entry includes native script (Odia & Devanagari), Romanized transliterations, Sambalpuri (Kosli), Santali, extracted keyword tags, urgency level, and expected deterministic protocol action (`SAFETY_ESCALATION`, `MEDICAL_ESCALATION`, `CRISIS_SUPPORT_ESCALATION`).
 * **Runtime Integration**: Dynamically ingested by `SafetyRulesEngine` ([app/trauma/rules.py](file:///c:/Users/SAMBIT/OneDrive/Documents/My%20Projects/trauma-voice-agent/backend/app/trauma/rules.py)) to override LLM reasoning with deterministic safety gates.
 
 ---
