@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { AgentPage } from './pages/AgentPage';
 import { UserDashboard } from './pages/UserDashboard';
 import { OperatorDashboard } from './pages/OperatorDashboard';
+import { EssentialResourcesPage } from './pages/EssentialResourcesPage';
 // Scroll to top upon route change
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -31,6 +32,7 @@ export const App: React.FC = () => {
           <Route path="/about" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/agent" element={<AgentPage />} />
+          <Route path="/essential-resources" element={<EssentialResourcesPage />} />
           <Route path="/user-dashboard" element={<UserDashboard />} />
           <Route path="/operator-dashboard" element={<OperatorDashboard />} />
         </Routes>

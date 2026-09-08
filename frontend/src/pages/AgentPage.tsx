@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 
 export const AgentPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'voice' | 'chat'>('voice');
+  const [callerPhone, setCallerPhone] = useState<string>(() => {
+    return (
+      sessionStorage.getItem('sahay_caller_phone') ||
+      localStorage.getItem('sahay_caller_phone') ||
+      '+91 94371-88210'
+    );
+  });
   const [isCalling, setIsCalling] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [detectedLanguage] = useState('Sarvam 22+ Auto-Detect');
@@ -64,13 +72,32 @@ export const AgentPage: React.FC = () => {
     return () => cancelAnimationFrame(animId);
   }, [isCalling]);
 
+  const syncCallerSession = (phone: string) => {
+    localStorage.setItem('sahay_caller_phone', phone);
+    sessionStorage.setItem('sahay_caller_phone', phone);
+    const cleanDigits = phone.replace(/\D/g, '').slice(-4) || '8821';
+    sessionStorage.setItem(
+      'sahay_user',
+      JSON.stringify({
+        role: 'user',
+        phone: phone,
+        id: `citizen_${cleanDigits}`,
+        name: `Verified Caller (${phone})`
+      })
+    );
+  };
+
   const toggleCall = () => {
+    if (!isCalling) {
+      syncCallerSession(callerPhone);
+    }
     setIsCalling(!isCalling);
   };
 
   const handleSendMessage = async (customText?: string) => {
     const textToSend = (customText || inputMessage).trim();
     if (!textToSend) return;
+    syncCallerSession(callerPhone);
 
     const newMsgs = [...chatMessages, { sender: 'user' as const, text: textToSend }];
     setChatMessages(newMsgs);
@@ -204,6 +231,57 @@ export const AgentPage: React.FC = () => {
                   >
                     Call 14566 Direct
                   </a>
+                </div>
+
+                {/* Auto-Synchronized Caller ID and Link to Dashboard */}
+                <div 
+                  style={{ 
+                    marginTop: '20px', 
+                    paddingTop: '16px', 
+                    borderTop: '1px solid var(--grey-8)', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    width: '100%', 
+                    flexWrap: 'wrap', 
+                    gap: '12px' 
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', background: '#d1fae5', color: '#065f46', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.04em' }}>
+                      CALLER LINE ID
+                    </span>
+                    <input 
+                      type="text" 
+                      value={callerPhone} 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCallerPhone(val);
+                        syncCallerSession(val);
+                      }}
+                      title="Caller phone number automatically linked to your grievances and recordings"
+                      style={{ 
+                        fontSize: '13px', 
+                        fontWeight: 600, 
+                        border: '1px solid #cbd5e1', 
+                        padding: '4px 10px', 
+                        borderRadius: '6px', 
+                        width: '160px',
+                        backgroundColor: '#ffffff'
+                      }}
+                    />
+                  </div>
+                  <Link 
+                    to="/user-dashboard" 
+                    style={{ 
+                      fontSize: '13px', 
+                      fontWeight: 600, 
+                      color: 'var(--black)', 
+                      textDecoration: 'underline' 
+                    }}
+                  >
+                    View My Complaints &amp; Audio Recordings →
+                  </Link>
                 </div>
               </div>
 

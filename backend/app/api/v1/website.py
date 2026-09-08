@@ -84,12 +84,13 @@ async def get_user_logs(user_id: str):
 
 @router.get("/complaints/recent")
 @router.get("/website/complaints/recent")
-async def get_recent_complaints():
-    """Publicly accessible endpoint: returns recent citizen complaints and recordings without login."""
+async def get_recent_complaints(phone: Optional[str] = None):
+    """Publicly accessible endpoint: returns citizen complaints and recordings filtered by caller phone number."""
     db = SupabaseManager.get_instance()
     return {
         "status": "success",
-        "complaints": db.get_citizen_complaints()
+        "caller_phone": phone,
+        "complaints": db.get_citizen_complaints(phone=phone)
     }
 
 @router.delete("/complaints/{identifier}")

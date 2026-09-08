@@ -129,10 +129,13 @@ export const api = {
     };
   },
 
-  /** Fetch Recent Citizen Complaints & Recordings (Publicly accessible without login) */
-  async getRecentComplaints() {
+  /** Fetch Recent Citizen Complaints & Recordings (Publicly accessible without login, filtered by phone) */
+  async getRecentComplaints(phone?: string) {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/complaints/recent`);
+      const url = phone 
+        ? `${API_BASE_URL}/api/v1/complaints/recent?phone=${encodeURIComponent(phone)}`
+        : `${API_BASE_URL}/api/v1/complaints/recent`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         return data.complaints || [];

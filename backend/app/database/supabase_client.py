@@ -38,6 +38,7 @@ class SupabaseManager:
             {
                 "id": "complaint_01",
                 "call_id": "call_9901_forest",
+                "caller_number": "+91 94371-88210",
                 "ticket_ref": "TKT-2026-0907-8821",
                 "type": "voice",
                 "timestamp": "Today, 22:45",
@@ -52,6 +53,7 @@ class SupabaseManager:
             {
                 "id": "complaint_02",
                 "call_id": "call_9902_boycott",
+                "caller_number": "+91 98610-44120",
                 "ticket_ref": "TKT-2026-0906-4412",
                 "type": "voice",
                 "timestamp": "Yesterday, 14:15",
@@ -246,6 +248,7 @@ class SupabaseManager:
         ticket_id: str,
         summary: str,
         risk_level: str,
+        caller_number: str = "+91 94371-88210",
         language: str = "or-IN",
         recording_url: Optional[str] = None,
         recommended_services: Optional[List[str]] = None
@@ -254,6 +257,7 @@ class SupabaseManager:
         complaint = {
             "id": f"complaint_{call_id}",
             "call_id": call_id,
+            "caller_number": caller_number,
             "ticket_ref": ticket_id,
             "type": "voice",
             "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
@@ -267,12 +271,22 @@ class SupabaseManager:
         }
         # Prepend to top of list
         self.in_memory_complaints.insert(0, complaint)
-        logger.info(f"[SupabaseManager] Registered complaint {ticket_id} for call {call_id}")
+        logger.info(f"[SupabaseManager] Registered complaint {ticket_id} for call {call_id} from {caller_number}")
         return complaint
 
-    def get_citizen_complaints(self) -> List[Dict[str, Any]]:
+    def get_citizen_complaints(self, phone: Optional[str] = None) -> List[Dict[str, Any]]:
         """Fetch legitimate citizen complaints and recordings for the public portal."""
-        return [c for c in self.in_memory_complaints if c.get("is_legitimate", True)]
+        base = [c for c in self.in_memory_complaints if c.get("is_legitimate", True)]
+        if phone:
+            digits = re.sub(r"\D", "", phone)[-10:]
+            if digits:
+                matched = [
+                    c for c in base 
+                    if digits in re.sub(r"\D", "", c.get("caller_number", ""))
+                ]
+                if matched:
+                    return matched
+        return base
 
     def delete_complaint(self, identifier: str) -> Optional[Dict[str, Any]]:
         """

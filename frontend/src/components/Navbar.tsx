@@ -25,22 +25,16 @@ export const Navbar: React.FC = () => {
             <Link to="/agent" className={`nav-menu-item ${isActive('/agent') ? 'w--current' : ''}`}>
               AI Voice Agent
             </Link>
-            <Link to="/user-dashboard" className={`nav-menu-item ${isActive('/user-dashboard') ? 'w--current' : ''}`}>
-              Citizen Cases
-            </Link>
             <Link to="/contact" className={`nav-menu-item ${isActive('/contact') ? 'w--current' : ''}`}>
               Contact Us
             </Link>
-            <Link to="/login" className={`nav-menu-item ${isActive('/login') ? 'w--current' : ''}`}>
+            <Link 
+              to="/login" 
+              className="button primary small w-button"
+              style={{ marginLeft: '12px', padding: '10px 22px', fontSize: '14px' }}
+            >
               Sign In
             </Link>
-            <a 
-              href="tel:112" 
-              className="button primary small w-button"
-              style={{ marginLeft: '12px', padding: '10px 18px', fontSize: '14px' }}
-            >
-              Police PCR 112
-            </a>
           </div>
 
           <div 
@@ -68,9 +62,10 @@ export const Navbar: React.FC = () => {
             <Link to="/" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Home</Link>
             <a href="/#services" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Services</a>
             <Link to="/agent" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>AI Voice Agent</Link>
-            <Link to="/user-dashboard" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Citizen Cases</Link>
             <Link to="/contact" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
-            <Link to="/login" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+            <Link to="/login" className="button primary small w-button" onClick={() => setMobileMenuOpen(false)} style={{ textAlign: 'center', marginTop: '8px' }}>
+              Sign In
+            </Link>
           </div>
         </div>
       )}

@@ -73,7 +73,7 @@ export const HomePage: React.FC = () => {
             Essential Resources for Citizens in Distress
           </h2>
           <div className="w-layout-grid blocks-grid-4-tablet-2-mobile-1">
-            <Link to="/agent" className="block padding-24-32 bg-grey-3 w-inline-block">
+            <Link to="/essential-resources#pcr-112" className="block padding-24-32 bg-grey-3 w-inline-block">
               <img 
                 src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e1ddac271bec0c838fff01_Bus.svg" 
                 loading="lazy" 
@@ -96,7 +96,7 @@ export const HomePage: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/contact" className="block padding-24-32 bg-grey-3 w-inline-block">
+            <Link to="/essential-resources#sc-st-rights" className="block padding-24-32 bg-grey-3 w-inline-block">
               <img 
                 src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e1ddad99de8a8440c54155_Books.svg" 
                 loading="lazy" 
@@ -119,7 +119,7 @@ export const HomePage: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/agent" className="block padding-24-32 bg-grey-3 w-inline-block">
+            <Link to="/essential-resources#svi-triage" className="block padding-24-32 bg-grey-3 w-inline-block">
               <img 
                 src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e1ddacc2cc0d921a4caf31_Graph.svg" 
                 loading="lazy" 
@@ -142,7 +142,7 @@ export const HomePage: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/agent" className="block padding-24-32 bg-grey-3 w-inline-block">
+            <Link to="/essential-resources#spatial-dialects" className="block padding-24-32 bg-grey-3 w-inline-block">
               <img 
                 src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e1ddacf8932bbb9febfbe8_Notebook.svg" 
                 loading="lazy" 
@@ -181,8 +181,8 @@ export const HomePage: React.FC = () => {
           <div className="w-layout-grid blocks-grid-3-tablet-1-mobile-1">
             <div className="block service">
               <img 
-                src="/images/crisis_embrace.jpeg" 
-                loading="lazy" 
+                src="/images/service_psychological.jpeg" 
+                loading="eager" 
                 alt="Psychological First Aid" 
                 className="service-image"
               />
@@ -197,8 +197,8 @@ export const HomePage: React.FC = () => {
 
             <div className="block service">
               <img 
-                src="/images/police_cadres.jpg" 
-                loading="lazy" 
+                src="/images/service_police.jpeg" 
+                loading="eager" 
                 alt="Legal & Police Protection" 
                 className="service-image"
               />
@@ -213,8 +213,8 @@ export const HomePage: React.FC = () => {
 
             <div className="block service">
               <img 
-                src="/images/multilingual_cloud.jpeg" 
-                loading="lazy" 
+                src="/images/service_multilingual.jpeg" 
+                loading="eager" 
                 alt="Multi-Dialect Crisis Care" 
                 className="service-image"
               />
