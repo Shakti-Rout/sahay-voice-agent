@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings
-from .api.v1 import health, test_audio, calls, dashboard
+from .api.v1 import health, test_audio, calls, dashboard, website
 from .websocket.client_ws import handle_client_websocket
 from .websocket.exotel_ws import handle_exotel_websocket
 from .websocket.dashboard_ws import handle_dashboard_websocket
@@ -40,6 +40,7 @@ app.include_router(health.router, prefix="/api/v1", tags=["System"])
 app.include_router(test_audio.router, prefix="/api/v1", tags=["Testing & Diagnostics"])
 app.include_router(calls.router, prefix="/api/v1", tags=["Telephony & Sessions"])
 app.include_router(dashboard.router, prefix="/api/v1", tags=["Operator Dashboard"])
+app.include_router(website.router, prefix="/api/v1", tags=["Website & Citizen Portal"])
 
 # WebSocket Endpoints
 @app.websocket("/ws/client/{call_id}")
