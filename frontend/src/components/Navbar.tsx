@@ -12,7 +12,7 @@ export const Navbar: React.FC = () => {
       <div className="w-layout-blockcontainer container w-container">
         <div className="nav-wrapper">
           <Link to="/" className={`nav-logo-wrapper w-inline-block ${isActive('/') ? 'w--current' : ''}`}>
-            <div className="nav-logo-text">SAHAY 14566 Helpline</div>
+            <div className="nav-logo-text" style={{ width: 'auto', letterSpacing: '0.05em', fontWeight: 600 }}>SAHAY</div>
           </Link>
           
           <div className="nav-menu-items-wrapper">

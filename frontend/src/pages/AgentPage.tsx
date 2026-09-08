@@ -124,7 +124,8 @@ export const AgentPage: React.FC = () => {
               <div 
                 className="hero-section-image internal" 
                 style={{ 
-                  backgroundImage: 'url("https://assets-global.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e5efde546aed636b06c52f_jeffery-erhunse-5eQ-_Gebljg-unsplash-min.webp")' 
+                  backgroundImage: 'url("/images/ai_humanoid_support.png")',
+                  backgroundPosition: '20% center'
                 }}
               ></div>
             </div>

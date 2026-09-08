@@ -150,9 +150,9 @@ export const LoginPage: React.FC = () => {
 
           <div className="banner-type-three-image">
             <img
-              src="https://assets-global.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e59e1eed012593f1e7737a_Schoolboy.webp"
+              src="/images/tribal_man_phone.png"
               loading="lazy"
-              alt="Citizen authentication"
+              alt="Citizen accessing SAHAY helpline"
               className="parallax-image"
               style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
             />

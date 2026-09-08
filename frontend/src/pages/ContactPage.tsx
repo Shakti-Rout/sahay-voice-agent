@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
 export const ContactPage: React.FC = () => {
+  useEffect(() => {
+    if (window.location.hash) {
+      const el = document.getElementById(window.location.hash.substring(1));
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    }
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     contact: '',
@@ -36,7 +45,13 @@ export const ContactPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="hero-section-image internal contact"></div>
+              <div 
+                className="hero-section-image internal contact"
+                style={{ 
+                  backgroundImage: 'url("/images/citizen_contact_phone.png")',
+                  backgroundPosition: 'center 30%'
+                }}
+              ></div>
             </div>
           </div>
         </main>
@@ -110,7 +125,7 @@ export const ContactPage: React.FC = () => {
       </section>
 
       {/* Banner Type Three: Reach Out to Us Form */}
-      <section className="section margin-top-176-mobile-144">
+      <section className="section margin-top-176-mobile-144" id="form">
         <div className="w-layout-blockcontainer container w-container">
           <div className="banner-type-three">
             <div className="banner-type-three-content bg-light-yellow">
@@ -189,9 +204,9 @@ export const ContactPage: React.FC = () => {
 
             <div className="banner-type-three-image">
               <img 
-                src="https://assets-global.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e870ed40079fc76edd2f69_Image-form.webp" 
+                src="/images/helpline_callcenter.jpeg" 
                 loading="lazy" 
-                alt="Man studying" 
+                alt="SAHAY Helpline Triage Operators" 
                 className="parallax-image"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
               />

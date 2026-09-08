@@ -2,6 +2,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 export const HomePage: React.FC = () => {
+  React.useEffect(() => {
+    if (window.location.hash) {
+      const elem = document.querySelector(window.location.hash);
+      if (elem) {
+        elem.scrollIntoView();
+      }
+    }
+  }, []);
+
   return (
     <>
       {/* Hero Section */}
@@ -26,31 +35,13 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="hero-section-image home-block">
-                <div className="hero-home-collection-list-wrapper w-dyn-list">
-                  <div role="list" className="hero-home-collection-list w-dyn-items">
-                    <div role="listitem" className="hero-home-collection-item w-dyn-item">
-                      <Link to="/agent" className="hero-home-collection-item-content w-inline-block">
-                        <div className="wrapper">
-                          <div className="regular-m grey-80 margin-bottom-16">24/7 Active Triage</div>
-                          <h3 className="h3">Toll-Free 14566 &amp; Immediate PCR 112 Dispatch</h3>
-                        </div>
-                        <div className="tertiary-button">
-                          <div className="regular-m">Connect Now</div>
-                          <div className="tertiary-button-icon">
-                            <img 
-                              src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e1ddac5c1d21f3b536e04f_Arrow%20Right.svg" 
-                              loading="lazy" 
-                              alt="" 
-                              className="icon-size-14"
-                            />
-                          </div>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <div 
+                className="hero-section-image home-block"
+                style={{ 
+                  backgroundImage: 'url("/images/hero_tribal_woman.webp")',
+                  backgroundPosition: 'center top'
+                }}
+              ></div>
             </div>
           </div>
         </main>
@@ -190,7 +181,7 @@ export const HomePage: React.FC = () => {
           <div className="w-layout-grid blocks-grid-3-tablet-1-mobile-1">
             <div className="block service">
               <img 
-                src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e59d4493520cdd785d9843_pexels-fauxels-3184644-min.webp" 
+                src="/images/crisis_embrace.jpeg" 
                 loading="lazy" 
                 alt="Psychological First Aid" 
                 className="service-image"
@@ -206,7 +197,7 @@ export const HomePage: React.FC = () => {
 
             <div className="block service">
               <img 
-                src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e59e1eed012593f1e7737a_Schoolboy.webp" 
+                src="/images/police_cadres.jpg" 
                 loading="lazy" 
                 alt="Legal & Police Protection" 
                 className="service-image"
@@ -222,9 +213,9 @@ export const HomePage: React.FC = () => {
 
             <div className="block service">
               <img 
-                src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e59e52a3bfabfb45be22f4_no-revisions-UhpAf0ySwuk-unsplash-min.webp" 
+                src="/images/multilingual_cloud.jpeg" 
                 loading="lazy" 
-                alt="Multi-Dialect Grounding" 
+                alt="Multi-Dialect Crisis Care" 
                 className="service-image"
               />
               <div className="wrapper max-width-420-tablet-560-mobile-420">
@@ -240,7 +231,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Active Helpline Intel & News (bg-grey-3) */}
-      <section className="section margin-top-176-mobile-144 bg-grey-3">
+      <section className="section margin-top-176-mobile-144 bg-grey-3" id="intel">
         <div className="w-layout-blockcontainer container w-container">
           <div className="wrapper bg-section-padding">
             <div className="heading-and-button margin-bottom-56">
@@ -261,9 +252,9 @@ export const HomePage: React.FC = () => {
                     <div className="collection-content-type-one">
                       <div className="collection-image-type-one wrapper">
                         <img 
-                          src="https://cdn.prod.website-files.com/65e1fea626366a3037fd8018/65e5a9107270b4a019170fbd_Image3.webp" 
+                          src="/images/police_triage_desk.jpeg" 
                           loading="lazy" 
-                          alt="" 
+                          alt="Police PCR 112 Integration" 
                           className="collection-image-type-one image"
                         />
                       </div>
@@ -292,9 +283,9 @@ export const HomePage: React.FC = () => {
                     <div className="collection-content-type-one">
                       <div className="collection-image-type-one wrapper">
                         <img 
-                          src="https://cdn.prod.website-files.com/65e1fea626366a3037fd8018/65e5a8387b8320b7e7984961_pexels-katerina-holmes-5905458-min.webp" 
+                          src="/images/tribal_man_phone.png" 
                           loading="lazy" 
-                          alt="" 
+                          alt="Sambalpuri and Santali Dialects" 
                           className="collection-image-type-one image"
                         />
                       </div>
@@ -323,9 +314,9 @@ export const HomePage: React.FC = () => {
                     <div className="collection-content-type-one">
                       <div className="collection-image-type-one wrapper">
                         <img 
-                          src="https://cdn.prod.website-files.com/65e1fea626366a3037fd8018/65e5a655cd8f155213038b14_Image2.webp" 
+                          src="/images/tribal_dancers.jpg" 
                           loading="lazy" 
-                          alt="" 
+                          alt="Tele-MANAS Psychological Protocol" 
                           className="collection-image-type-one image"
                         />
                       </div>
@@ -387,68 +378,10 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Helpline Directorate / Leadership */}
-      <section className="section margin-top-176-mobile-144">
-        <div className="w-layout-blockcontainer container w-container">
-          <div className="heading-and-button margin-bottom-56">
-            <h2 className="h2 max-width-432-mobile-320">Helpline Directorate</h2>
-            <Link to="/contact" className="button secondary small w-button">Contact Directorate</Link>
-          </div>
 
-          <div className="w-layout-grid cards-grid-3-tablet-1-mobile-1">
-            <div className="person-card">
-              <div className="person-image-wrapper">
-                <img 
-                  src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e5b3406bdbbbb7f9854279_Image-2.webp" 
-                  loading="lazy" 
-                  alt="Dr. S. Panda" 
-                  className="person-image"
-                />
-              </div>
-              <div className="wrapper">
-                <h4 className="h4 margin-bottom-16">Dr. S. Panda</h4>
-                <div className="line black margin-bottom-16"></div>
-                <div className="regular-l">Lead Clinical Psychologist (Tele-MANAS)</div>
-              </div>
-            </div>
-
-            <div className="person-card">
-              <div className="person-image-wrapper">
-                <img 
-                  src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e5b4d3589b7a47b8be1ffe_Imageperson.webp" 
-                  loading="lazy" 
-                  alt="Officer S. Mishra" 
-                  className="person-image"
-                />
-              </div>
-              <div className="wrapper">
-                <h4 className="h4 margin-bottom-16">Officer S. Mishra</h4>
-                <div className="line black margin-bottom-16"></div>
-                <div className="regular-l">Triage Operations Director (14566)</div>
-              </div>
-            </div>
-
-            <div className="person-card">
-              <div className="person-image-wrapper">
-                <img 
-                  src="https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e5b340c3be3dd4a3242062_Image-1.webp" 
-                  loading="lazy" 
-                  alt="Adv. R. Soren" 
-                  className="person-image"
-                />
-              </div>
-              <div className="wrapper">
-                <h4 className="h4 margin-bottom-16">Adv. R. Soren</h4>
-                <div className="line black margin-bottom-16"></div>
-                <div className="regular-l">Tribal Rights &amp; DLSA Legal Counsel</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Warli Tribal Art Footer Banner from footer.png */}
-      <section className="section margin-top-176-mobile-144">
+      <section className="section margin-top-176-mobile-144" id="warli">
         <div className="w-layout-blockcontainer container w-container">
           <div className="warli-footer-container">
             <img 

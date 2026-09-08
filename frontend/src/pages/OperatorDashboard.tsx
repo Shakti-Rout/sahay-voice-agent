@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { TraumaMetricsChart, type TraumaIndicatorData } from '../components/TraumaMetricsChart';
 
 interface QueueItem {
   id: string;
@@ -12,6 +13,16 @@ interface QueueItem {
   emotion: { fear: number; sadness: number; anger: number; neutral: number };
   acoustic: { pitch_f0: number; jitter: number; pause_ratio: number; speech_rate: number };
   flags: string[];
+  ps26093_indicators?: {
+    fear_panic: number;
+    stress_anxiety: number;
+    intimidation_threat: number;
+    severe_trauma: number;
+    social_boycott: number;
+    sadness_grief: number;
+    anger_agitation: number;
+    suicidal_ideation: number;
+  };
   latest_utterance: string;
   sbar: {
     situation: string;
@@ -34,6 +45,16 @@ export const OperatorDashboard: React.FC = () => {
       emotion: { fear: 0.88, sadness: 0.06, anger: 0.04, neutral: 0.02 },
       acoustic: { pitch_f0: 312, jitter: 0.048, pause_ratio: 0.38, speech_rate: 3.4 },
       flags: ['ACTIVE_PURSUIT', 'WILDERNESS_OUTDOORS', 'ARMED_THREAT'],
+      ps26093_indicators: {
+        fear_panic: 88,
+        stress_anxiety: 82,
+        intimidation_threat: 94,
+        severe_trauma: 85,
+        social_boycott: 18,
+        sadness_grief: 24,
+        anger_agitation: 32,
+        suicidal_ideation: 12,
+      },
       latest_utterance: 'ମୋତେ ମାରିବାକୁ ଗୋଡ଼ାଉଛନ୍ତି, ମୁଁ ଏବେ ଜଙ୍ଗଲରେ ଲୁଚିକି ଅଛି। (Mate maribaku godauchanti...)',
       sbar: {
         situation: 'Caller is being actively chased by armed attackers in a forest.',
@@ -53,6 +74,16 @@ export const OperatorDashboard: React.FC = () => {
       emotion: { fear: 0.45, sadness: 0.35, anger: 0.15, neutral: 0.05 },
       acoustic: { pitch_f0: 245, jitter: 0.024, pause_ratio: 0.22, speech_rate: 2.8 },
       flags: ['SOCIAL_BOYCOTT', 'WATER_ACCESS_DENIAL', 'KOSLI_DIALECT'],
+      ps26093_indicators: {
+        fear_panic: 45,
+        stress_anxiety: 68,
+        intimidation_threat: 64,
+        severe_trauma: 42,
+        social_boycott: 92,
+        sadness_grief: 72,
+        anger_agitation: 35,
+        suicidal_ideation: 8,
+      },
       latest_utterance: 'ମୋର୍ ପିତା ଖେଡି ଦେଲେ, ପାଣି ନେବାର୍ ମନା କର୍ଲେ। (Mor pita khedi dele...)',
       sbar: {
         situation: 'Family subject to social boycott and denied drinking water access.',
@@ -62,6 +93,31 @@ export const OperatorDashboard: React.FC = () => {
       }
     }
   ]);
+
+  const getTraumaChartData = (item: QueueItem): TraumaIndicatorData[] => {
+    if (item.ps26093_indicators) {
+      return [
+        { indicator: 'Intimidation & Threat', score: item.ps26093_indicators.intimidation_threat, category: 'Linguistic Threat / Coercion', color: '#b91c1c' },
+        { indicator: 'Fear & Panic', score: item.ps26093_indicators.fear_panic, category: 'Dominant Emotion State', color: '#dc2626' },
+        { indicator: 'Severe Trauma', score: item.ps26093_indicators.severe_trauma, category: 'Bodily Harm / Caste Atrocity', color: '#991b1b' },
+        { indicator: 'Stress & Anxiety', score: item.ps26093_indicators.stress_anxiety, category: 'Vocal Micro-Tremor (Jitter)', color: '#ea580c' },
+        { indicator: 'Social Boycott', score: item.ps26093_indicators.social_boycott, category: 'PoA Sec 3(1)(za) Exclusion', color: '#7c3aed' },
+        { indicator: 'Sadness & Despair', score: item.ps26093_indicators.sadness_grief, category: 'Grief / Helplessness', color: '#2563eb' },
+        { indicator: 'Anger & Agitation', score: item.ps26093_indicators.anger_agitation, category: 'Voice Shimmer / Tension', color: '#d97706' },
+        { indicator: 'Suicidal Ideation', score: item.ps26093_indicators.suicidal_ideation, category: 'Self-Harm / Crisis Intervention', color: '#475569' },
+      ];
+    }
+    return [
+      { indicator: 'Intimidation & Threat', score: item.flags.includes('ARMED_THREAT') ? 92 : 45, category: 'Linguistic Threat', color: '#b91c1c' },
+      { indicator: 'Fear & Panic', score: Math.round(item.emotion.fear * 100), category: 'Emotion State', color: '#dc2626' },
+      { indicator: 'Severe Trauma', score: Math.round(item.svi_score * 90), category: 'Trauma Load', color: '#991b1b' },
+      { indicator: 'Stress & Anxiety', score: Math.round(item.svi_score * 85), category: 'Acoustic Tension', color: '#ea580c' },
+      { indicator: 'Social Boycott', score: item.flags.includes('SOCIAL_BOYCOTT') ? 90 : 15, category: 'Exclusion', color: '#7c3aed' },
+      { indicator: 'Sadness & Despair', score: Math.round(item.emotion.sadness * 100), category: 'Vocal Sorrow', color: '#2563eb' },
+      { indicator: 'Anger & Agitation', score: Math.round(item.emotion.anger * 100), category: 'Agitation', color: '#d97706' },
+      { indicator: 'Suicidal Ideation', score: item.risk_level === 'CRITICAL' ? 12 : 5, category: 'Crisis Risk', color: '#475569' },
+    ];
+  };
 
   const [selectedItem, setSelectedItem] = useState<QueueItem>(queue[0]);
   const [dispatchModalOpen, setDispatchModalOpen] = useState(false);
@@ -94,10 +150,6 @@ export const OperatorDashboard: React.FC = () => {
                 <h2 className="h2 max-width-432-mobile-320">Operator Triage Console</h2>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block' }}></span>
-                  <span className="regular-m">Exotel &amp; Web Telephony Connected</span>
-                </div>
                 <button 
                   type="button" 
                   onClick={handleSignOut} 
@@ -177,42 +229,14 @@ export const OperatorDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Acoustic & Emotion Telemetry */}
-                <div style={{ width: '100%', marginBottom: '24px' }}>
-                  <div className="regular-s color-grey-80 margin-bottom-12" style={{ textTransform: 'uppercase' }}>
-                    Acoustic &amp; Emotional Distribution Telemetry (Wav2Vec2):
-                  </div>
-                  <div className="telemetry-row">
-                    <span>Acoustic Pitch F0 (Tension / Distress)</span>
-                    <span><strong>{selectedItem.acoustic.pitch_f0} Hz</strong></span>
-                  </div>
-                  <div className="telemetry-row">
-                    <span>Vocal Jitter (Micro-Tremor)</span>
-                    <span><strong>{selectedItem.acoustic.jitter}</strong></span>
-                  </div>
-                  <div className="telemetry-row">
-                    <span>Speech Pause Ratio (Freeze Defense)</span>
-                    <span><strong>{(selectedItem.acoustic.pause_ratio * 100).toFixed(0)}%</strong></span>
-                  </div>
-                  <div className="telemetry-row">
-                    <span>Fear Probability</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div className="telemetry-bar-bg">
-                        <div className="telemetry-bar-fill" style={{ width: `${selectedItem.emotion.fear * 100}%`, backgroundColor: '#ef4444' }}></div>
-                      </div>
-                      <span>{(selectedItem.emotion.fear * 100).toFixed(0)}%</span>
-                    </div>
-                  </div>
-                  <div className="telemetry-row">
-                    <span>Sadness Probability</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div className="telemetry-bar-bg">
-                        <div className="telemetry-bar-fill" style={{ width: `${selectedItem.emotion.sadness * 100}%`, backgroundColor: '#3b82f6' }}></div>
-                      </div>
-                      <span>{(selectedItem.emotion.sadness * 100).toFixed(0)}%</span>
-                    </div>
-                  </div>
-                </div>
+                {/* Recharts PS 26093 Trauma & Distress Indicators Bar Chart */}
+                <TraumaMetricsChart
+                  callerId={selectedItem.id}
+                  callerNumber={selectedItem.caller_number}
+                  riskLevel={selectedItem.risk_level}
+                  sviScore={selectedItem.svi_score}
+                  data={getTraumaChartData(selectedItem)}
+                />
 
                 {/* SBAR Report */}
                 <div style={{ width: '100%' }}>
