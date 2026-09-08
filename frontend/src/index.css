@@ -1,0 +1,206 @@
+@import './styles/ignatius-school.webflow.css';
+
+/* Full-width 1920px container hierarchy matching the live Ignatius Webflow site */
+.container,
+.w-container,
+.w-layout-blockcontainer,
+.w-layout-blockcontainer.container,
+.w-layout-blockcontainer.container.w-container {
+  width: 100% !important;
+  max-width: 1920px !important;
+  padding-left: 64px !important;
+  padding-right: 64px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* In the hero section, the right-side image extends right to the edge of the screen */
+.container.hero,
+.w-layout-blockcontainer.container.hero.w-container {
+  padding-right: 0px !important;
+}
+
+/* In internal hero sections (Contact, etc.), both sides bleed to screen boundaries */
+.container.hero.internal,
+.w-layout-blockcontainer.container.hero.internal.w-container {
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+}
+
+@media screen and (max-width: 991px) {
+  .container,
+  .w-container,
+  .w-layout-blockcontainer,
+  .w-layout-blockcontainer.container,
+  .w-layout-blockcontainer.container.w-container {
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+}
+
+@media screen and (max-width: 479px) {
+  .container,
+  .w-container,
+  .w-layout-blockcontainer,
+  .w-layout-blockcontainer.container,
+  .w-layout-blockcontainer.container.w-container {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+
+/* Base resets & typography */
+html, body {
+  background-color: var(--white);
+  color: var(--black);
+  margin: 0;
+  padding: 0;
+  font-family: 'Almarai', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Warli Tribal Art Footer Container */
+.warli-footer-container {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--grey-8);
+  background-color: #0d0a08;
+  border-radius: 2px;
+  margin-top: 40px;
+  margin-bottom: 24px;
+}
+
+.warli-footer-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Dashboard & Agent styling conforming strictly to Ignatius Webflow design language */
+.triage-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.triage-badge.critical {
+  background-color: #fcdfe1;
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+.triage-badge.high {
+  background-color: #ffdf8b;
+  color: #854d0e;
+  border: 1px solid #facc15;
+}
+
+.triage-badge.low {
+  background-color: #c3efc8;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+/* Canvas Audio Visualizer */
+.waveform-canvas {
+  width: 100%;
+  height: 100px;
+  background-color: var(--white);
+  border: 1px solid var(--grey-8);
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+/* Chat Bubbles in Webflow theme */
+.chat-bubble-user {
+  background-color: var(--grey-8);
+  color: var(--black);
+  padding: 16px 20px;
+  border-radius: 12px 12px 2px 12px;
+  margin-left: auto;
+  max-width: 80%;
+  margin-bottom: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.chat-bubble-agent {
+  background-color: var(--light-yellow);
+  color: var(--black);
+  padding: 16px 20px;
+  border-radius: 12px 12px 12px 2px;
+  margin-right: auto;
+  max-width: 85%;
+  margin-bottom: 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Telemetry meters */
+.telemetry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--grey-8);
+  font-size: 14px;
+}
+
+.telemetry-bar-bg {
+  width: 120px;
+  height: 8px;
+  background-color: var(--grey-8);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.telemetry-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(29, 26, 23, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 24px;
+}
+
+.modal-content {
+  background-color: var(--white);
+  max-width: 600px;
+  width: 100%;
+  padding: 40px;
+  border: 1px solid var(--grey-8);
+  border-radius: 4px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
