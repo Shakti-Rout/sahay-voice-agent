@@ -1,0 +1,46 @@
+:root {
+  /* Editorial Color Palette (Matching St. Ignatius Webflow Reference) */
+  --bg-primary: #FAF7F2;          /* Soft ivory / warm cream */
+  --bg-surface: #FFFFFF;          /* Pure crisp card surface */
+  --bg-sand: #FDEED9;             /* Warm golden sand card */
+  --bg-peach: #FCE9DF;            /* Soft terracotta/peach card */
+  --bg-sage: #DDEADE;             /* Calm muted sage green */
+  --bg-lavender: #EAE3F7;         /* Soft contemplative lavender */
+  --bg-sky: #DCEDF9;              /* Reassuring sky blue */
+  --bg-muted: #F2EFE9;            /* Subtle card hover background */
+
+  /* Text & Contrast */
+  --text-main: #1A1A1A;           /* Deep obsidian charcoal */
+  --text-secondary: #4A453E;      /* Warm charcoal secondary */
+  --text-muted: #7A746B;          /* Soft warm gray for captions */
+  --text-inverse: #FFFFFF;
+
+  /* Borders & Dividers */
+  --border-light: rgba(0, 0, 0, 0.08);
+  --border-hairline: #E5E0D8;
+  --border-active: #1A1A1A;
+
+  /* Accent & Triage Colors */
+  --color-critical: #DC2626;
+  --color-high: #EA580C;
+  --color-moderate: #D97706;
+  --color-low: #16A34A;
+  --color-telecom: #0284C7;
+
+  /* Typography */
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Layout & Sizing */
+  --max-width: 1280px;
+  --radius-pill: 9999px;
+  --radius-card: 16px;
+  --radius-sm: 8px;
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 10px 30px -4px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 16px 36px -4px rgba(0, 0, 0, 0.10);
+
+  /* Transitions */
+  --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
