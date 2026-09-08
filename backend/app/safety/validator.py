@@ -35,11 +35,62 @@ class SafetyValidator:
         "i promise everything will be fixed today"
     ]
 
+    OUT_OF_SCOPE_PATTERNS = [
+        # Coding & Software Engineering
+        r"\b(?:python|javascript|typescript|java|c\+\+|html|css|react|angular|vue|django|flask|spring boot)\b",
+        r"\b(?:write\s+(?:a\s+)?code|coding|function|variable|algorithm|debugging|compiler|sql\s+query|database\s+schema)\b",
+        r"\b(?:write\s+(?:a\s+)?script|programming|binary\s+search|data\s+structure)\b",
+        r"(?:କୋଡିଂ|କୋଡ୍|ପ୍ରୋଗ୍ରାମିଂ|ସଫ୍ଟୱେର୍|ଡିବଗ୍|ପାଇଥନ୍)",
+        # Sports, Gaming, Cinema & Entertainment
+        r"\b(?:cricket|ipl|football|fifa|messi|ronaldo|virat\s+kohli|world\s+cup|match\s+score)\b",
+        r"\b(?:cinema|movie|actor|actress|bollywood|hollywood|box\s+office|song\s+lyrics)\b",
+        r"(?:କ୍ରିକେଟ|ଫୁଟବଲ|ମ୍ୟାଚ୍|ସିନେମା|ଗୀତ|ଚଳଚ୍ଚିତ୍ର)",
+        # Trivia, Weather, Stock market, Crypto, Recipes
+        r"\b(?:bitcoin|cryptocurrency|stock\s+market|share\s+price|trading\s+tips)\b",
+        r"\b(?:weather\s+forecast|temperature\s+today|rain\s+forecast|panipaga)\b",
+        r"(?:ପାଣିପାଗ|ତାପମାତ୍ରା|ବିଟକଏନ|ଶେୟାର\s+ବଜାର)",
+        r"\b(?:recipe\s+for|how\s+to\s+cook|biryani\s+recipe|joke|funny\s+story|riddle)\b",
+        r"(?:ରୋଷେଇ|ରେସିପି|ଚୁଟକୁଲା|ମଜାଳିଆ\s+ଗପ|କୌତୁକ)",
+        r"\b(?:solve\s+this\s+math|homework|write\s+(?:an?\s+)?essay|who\s+is\s+the\s+president\s+of)\b"
+    ]
+
+    OUT_OF_SCOPE_RESPONSES = {
+        "or": "ଏହା ଜାତୀୟ ହେଲ୍ପଲାଇନ୍ ୧୪୫୬୬ (National Helpline Against Atrocities) ଅଟେ। ଆମେ କେବଳ ଅତ୍ୟାଚାର, ଭେଦଭାବ, ଜରୁରୀକାଳୀନ ସୁରକ୍ଷା ଓ ଆଇନଗତ ସହାୟତା ପାଇଁ କାର୍ଯ୍ୟ କରୁଛୁ। ଏହି ପ୍ରଶ୍ନ ଆମ କାର୍ଯ୍ୟ ପରିସର ବାହାରେ ଅଟେ।",
+        "hi": "यह राष्ट्रीय अत्याचार निवारण हेल्पलाइन 14566 है। हम केवल अत्याचार, भेदभाव, आपातकालीन सुरक्षा और कानूनी सहायता से संबंधित मामलों में सहायता करते हैं। यह प्रश्न हमारे कार्यक्षेत्र से बाहर है।",
+        "en": "This is the National Helpline Against Atrocities (14566). We provide assistance strictly for atrocities, caste discrimination, emergency safety, and statutory victim rights. We cannot answer out-of-scope inquiries."
+    }
+
     SAFE_FALLBACKS = {
         "or": "Namaskar. Apan ebe surakshita achhanti ki? Apananka surakhya amara prathama kartavya. Daya kari kuhan tu ame kemiti sahajya kariparibu.",
         "hi": "Namaskar. Kya aap abhi surakshit hain? Aapki suraksha hamari pehli prathmikta hai. Kripya batayein hum aapki kya sahayata kar sakte hain.",
         "en": "Hello. Are you currently in a safe place? Your immediate safety is our priority. Please let us know how we can support you."
     }
+
+    @classmethod
+    def is_out_of_scope(cls, text: str) -> bool:
+        """Determines if a caller message or query is completely unrelated to helpline scope."""
+        if not text or not text.strip():
+            return False
+        
+        lower = text.lower()
+        
+        # Check if text contains genuine emergency/grievance/helpline keywords
+        in_scope_override_keywords = [
+            "help", "sahayata", "sahajya", "madad", "police", "fir", "atrocity", "dhamki",
+            "threat", "marba", "marideba", "dar", "bhaya", "banchao", "bachao", "boycott",
+            "bahiskara", "panchayat", "hospital", "doctor", "attack", "lathi", "churi",
+            "14566", "112", "sc/st", "caste", "discrimination", "shikayat", "complaint",
+            "ଗୋଡ଼ାଉଛନ୍ତି", "ମାରିବା", "ପୋଲିସ", "ସାହାଯ୍ୟ", "ବାସନ୍ଦ", "ଜଙ୍ଗଲ", "ଅତ୍ୟାଚାର"
+        ]
+        if any(kw in lower for kw in in_scope_override_keywords):
+            is_overt_coding = any(p in lower for p in ["write code", "write a python", "write python", "coding", "debug this function"])
+            if not is_overt_coding:
+                return False
+
+        for pattern in cls.OUT_OF_SCOPE_PATTERNS:
+            if re.search(pattern, lower, re.IGNORECASE):
+                return True
+        return False
 
     @classmethod
     def validate(cls, text: str, language_code: str = "or", caller_transcript: str = "") -> Tuple[str, bool]:
@@ -49,6 +100,18 @@ class SafetyValidator:
         """
         lower = text.lower()
         validated_text = text
+
+        # 0. Check if caller query was out of scope
+        if caller_transcript and cls.is_out_of_scope(caller_transcript):
+            lang_key = "hi" if "hi" in language_code.lower() else ("en" if "en" in language_code.lower() else "or")
+            logger.warning(f"[SafetyValidator] Out-of-scope query blocked from caller transcript: {caller_transcript[:50]}")
+            return cls.OUT_OF_SCOPE_RESPONSES.get(lang_key, cls.OUT_OF_SCOPE_RESPONSES["en"]), False
+
+        # Check if generated response is answering out of scope topics
+        if cls.is_out_of_scope(text):
+            lang_key = "hi" if "hi" in language_code.lower() else ("en" if "en" in language_code.lower() else "or")
+            logger.warning(f"[SafetyValidator] Out-of-scope response generation intercepted: {text[:50]}")
+            return cls.OUT_OF_SCOPE_RESPONSES.get(lang_key, cls.OUT_OF_SCOPE_RESPONSES["en"]), False
 
         # 1. Check for prohibited medical/clinical diagnosis
         for diag in cls.PROHIBITED_DIAGNOSES:
