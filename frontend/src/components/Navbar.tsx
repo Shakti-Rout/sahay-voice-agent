@@ -1,0 +1,75 @@
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+
+export const Navbar: React.FC = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <nav className="nav">
+      <div className="w-layout-blockcontainer container w-container">
+        <div className="nav-wrapper">
+          <Link to="/" className={`nav-logo-wrapper w-inline-block ${isActive('/') ? 'w--current' : ''}`}>
+            <div className="nav-logo-text">SAHAY 14566 Helpline</div>
+          </Link>
+          
+          <div className="nav-menu-items-wrapper">
+            <Link to="/" className={`nav-menu-item ${isActive('/') ? 'w--current' : ''}`}>
+              Home
+            </Link>
+            <a href="/#services" className="nav-menu-item">
+              Services
+            </a>
+            <Link to="/agent" className={`nav-menu-item ${isActive('/agent') ? 'w--current' : ''}`}>
+              AI Voice Agent
+            </Link>
+            <Link to="/contact" className={`nav-menu-item ${isActive('/contact') ? 'w--current' : ''}`}>
+              Contact Us
+            </Link>
+            <Link to="/login" className={`nav-menu-item ${isActive('/login') ? 'w--current' : ''}`}>
+              Sign In
+            </Link>
+            <a 
+              href="tel:112" 
+              className="button primary small w-button"
+              style={{ marginLeft: '12px', padding: '10px 18px', fontSize: '14px' }}
+            >
+              Police PCR 112
+            </a>
+          </div>
+
+          <div 
+            className={`menu-icon-wrapper ${mobileMenuOpen ? 'close' : 'open'}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ display: 'none' }}
+          >
+            <img 
+              src={mobileMenuOpen 
+                ? "https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e1ddac5fa44fd60b494d67_Cross.svg"
+                : "https://cdn.prod.website-files.com/65e1c0c2fd61a5053f5c7bc9/65e1ddacd6ea5efbf21e94d2_Hamburger%20Menu.svg"
+              } 
+              loading="lazy" 
+              alt="Menu" 
+              className="icon-size-28"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile adaptation drawer if opened */}
+      {mobileMenuOpen && (
+        <div className="nav-adaptation" style={{ display: 'block', backgroundColor: 'var(--white)', borderBottom: '1px solid var(--grey-8)', padding: '24px 32px' }}>
+          <div className="nav-adaptation-links" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Link to="/" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Home</Link>
+            <a href="/#services" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Services</a>
+            <Link to="/agent" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>AI Voice Agent</Link>
+            <Link to="/contact" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
+            <Link to="/login" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+};
