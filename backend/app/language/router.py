@@ -27,6 +27,8 @@ class SupportedLanguage(str, Enum):
     MALAYALAM = "ml-IN"
     SAMBALPURI = "sp-IN"
     SANTALI = "sat-IN"
+    DESIA = "des-IN"
+    KUI = "kui-IN"
     UNKNOWN = "unknown"
 
 
@@ -85,9 +87,75 @@ class DialectBridge:
         r"\bdahar\b": "rasta"
     }
 
+    # Desia (Southern Odisha tribal dialect - Koraput, Malkangiri, Nabarangpur) -> Odia
+    DESIA_TO_ODIA = {
+        r"\bmor pache padila\b": "mo pache padichhi",
+        r"\bmor pache\b": "mo pache",
+        r"\bgodauche\b": "godauchhi",
+        r"\bgodauchhan\b": "godauchhanti",
+        r"\bbhay laguche\b": "bhaya laguchhi",
+        r"\bpani mana\b": "pani nebaku mana",
+        r"\bkhedi delu\b": "bahiskara kale",
+        r"\bkhedi dele\b": "bahiskara kale",
+        r"\bmarba\b": "marideba",
+        r"\bmor banchao\b": "mote banchantu",
+        r"\bdada banchao\b": "bhai banchantu",
+        r"\bdada\b": "bhai",
+        r"\bghare dhukila\b": "ghara bhitaraku pasi",
+        r"\bkaha sunba nahi\b": "kehi sununahanti",
+        r"\bpadili\b": "padichi",
+        r"\bjaiba\b": "jiba",
+        r"\bkarba\b": "kariba",
+        r"\bkhaye\b": "khauchi",
+        r"\bdongar\b": "pahar",
+        r"\bbana\b": "jangala",
+        r"\bmora ke\b": "mote",
+        r"\btora ke\b": "tote",
+        r"\bchua ke\b": "pila ku",
+        r"\bpila ke\b": "pila ku"
+    }
+
+    # Kui (Kandha indigenous tribal language) -> Odia
+    KUI_TO_ODIA = {
+        r"\baanu\b": "mu",
+        r"\baane\b": "mate",
+        r"\bgida\b": "pila",
+        r"\bmira\b": "pila",
+        r"\bmera\b": "ghara",
+        r"\biddu\b": "ghara",
+        r"\bhaji\b": "rasta",
+        r"\bgahi\b": "bhaya",
+        r"\bvespa\b": "kahiba",
+        r"\bnaju\b": "gan",
+        r"\bdaha\b": "pani",
+        r"\bbana\b": "jangala",
+        r"\bdohpa\b": "mariba",
+        r"\bpacha\b": "pache"
+    }
+
+    # Broken and colloquial Odia telegraphic phrasing
+    COLLOQUIAL_BROKEN_ODIA_PATTERNS = {
+        r"\bmo jana\b": "mu jane",
+        r"\bmate dar\b": "mate bhaya laguchi",
+        r"\bchua mari\b": "pila ku maruchanti",
+        r"\bpani nai\b": "pani miluni",
+        r"\bbata nai\b": "rasta nahi",
+        r"\bghara bhanga\b": "ghara bhangi dele",
+        r"\bse marba\b": "se marideba",
+        r"\bmada khauchu\b": "maru pita karuchanti",
+        r"\bbachao dada\b": "bhai banchantu",
+        r"\bpolice dak\b": "police ku dakantu",
+        r"\blathi mada\b": "lathi re maruchanti",
+        r"\bjati gali\b": "jati nei gali deuchhanti",
+        r"\bgharu kadhi\b": "gharu bahari dele",
+        r"\bpani band\b": "pani band karidele",
+        r"\bdana band\b": "khadya band karidele",
+        r"\bgrama bahara\b": "gan ru bahiskara"
+    }
+
     @classmethod
     def normalize_dialect(cls, text: str, source_dialect: str) -> str:
-        """Normalize regional dialect terms into standard form for semantic processing."""
+        """Normalize regional dialect terms and broken colloquial terms into standard form for semantic processing."""
         if not text:
             return ""
         normalized = text
@@ -97,6 +165,17 @@ class DialectBridge:
         elif source_dialect in [SupportedLanguage.SANTALI, "sat-IN", "santali"]:
             for pattern, replacement in cls.SANTALI_TO_ODIA.items():
                 normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+        elif source_dialect in [SupportedLanguage.DESIA, "des-IN", "desia"]:
+            for pattern, replacement in cls.DESIA_TO_ODIA.items():
+                normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+        elif source_dialect in [SupportedLanguage.KUI, "kui-IN", "kui"]:
+            for pattern, replacement in cls.KUI_TO_ODIA.items():
+                normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+
+        # Apply broken colloquial Odia normalization across Odia & regional tribal dialects
+        for pattern, replacement in cls.COLLOQUIAL_BROKEN_ODIA_PATTERNS.items():
+            normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+
         return normalized
 
 
@@ -127,6 +206,15 @@ class LanguageRouter:
     SAMBALPURI_PHONETIC_MARKERS = {
         "kanje", "godauchhan", "godauchhe", "marba", "deuchhe", "karchhe", "mor", "tor",
         "hanta", "enta", "dongar", "bana", "nuchi", "khedi", "pita", "khata", "aichhe", "aichhan"
+    }
+
+    DESIA_PHONETIC_MARKERS = {
+        "godauche", "laguche", "sunba", "dhukila", "padila", "mor", "banchao", "khedi", "delu",
+        "dada", "ghare", "dongar", "marba", "padili", "jaiba", "karba"
+    }
+
+    KUI_PHONETIC_MARKERS = {
+        "aanu", "aane", "gida", "mera", "haji", "gahi", "vespa", "naju", "iddu", "daha", "mira", "dohpa"
     }
 
     SANTALI_PHONETIC_MARKERS = {
@@ -208,15 +296,25 @@ class LanguageRouter:
 
         # Check tribal and regional dialect phonetic markers
         santali_matches = len(words.intersection(self.SANTALI_PHONETIC_MARKERS))
+        kui_matches = len(words.intersection(self.KUI_PHONETIC_MARKERS))
+        desia_matches = len(words.intersection(self.DESIA_PHONETIC_MARKERS))
         sambalpuri_matches = len(words.intersection(self.SAMBALPURI_PHONETIC_MARKERS))
         odia_matches = len(words.intersection(self.ODIA_PHONETIC_MARKERS))
         hindi_matches = len(words.intersection(self.HINDI_PHONETIC_MARKERS))
         bengali_matches = len(words.intersection(self.BENGALI_PHONETIC_MARKERS))
         telugu_matches = len(words.intersection(self.TELUGU_PHONETIC_MARKERS))
 
-        if santali_matches > 0 and santali_matches >= max(sambalpuri_matches, odia_matches, hindi_matches):
+        if santali_matches > 0 and santali_matches >= max(sambalpuri_matches, desia_matches, kui_matches, odia_matches, hindi_matches):
             conf = min(0.70 + (santali_matches * 0.10), 0.98)
             return SupportedLanguage.SANTALI, conf
+
+        if kui_matches > 0 and kui_matches >= max(sambalpuri_matches, desia_matches, odia_matches, hindi_matches):
+            conf = min(0.70 + (kui_matches * 0.10), 0.98)
+            return SupportedLanguage.KUI, conf
+
+        if desia_matches > 0 and desia_matches >= max(sambalpuri_matches, odia_matches, hindi_matches):
+            conf = min(0.70 + (desia_matches * 0.10), 0.98)
+            return SupportedLanguage.DESIA, conf
 
         if sambalpuri_matches > 0 and sambalpuri_matches >= max(odia_matches, hindi_matches):
             conf = min(0.70 + (sambalpuri_matches * 0.10), 0.98)
@@ -279,6 +377,10 @@ class LanguageRouter:
             return SupportedLanguage.SAMBALPURI
         if "sat" in c or "santali" in c:
             return SupportedLanguage.SANTALI
+        if "des" in c or "desia" in c or "koraput" in c:
+            return SupportedLanguage.DESIA
+        if "kui" in c or "kandha" in c:
+            return SupportedLanguage.KUI
         if "or" in c or "odi" in c or "od-" in c:
             return SupportedLanguage.ODIA
         if "hi" in c or "hin" in c:
