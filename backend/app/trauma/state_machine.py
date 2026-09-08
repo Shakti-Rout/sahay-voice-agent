@@ -116,6 +116,10 @@ class ConversationStateManager:
             base_lang_instruction = "You MUST speak in natural, empathetic, spoken SAMBALPURI / KOSLI ODIA. Directly address the caller's specific situation."
         elif "sat" in lc or "santali" in lc:
             base_lang_instruction = "You MUST speak in simple, reassuring ODIA or Santali-contact phrasing. Directly address the caller's specific situation."
+        elif "des" in lc or "desia" in lc or "koraput" in lc:
+            base_lang_instruction = "You MUST speak in natural, empathetic, spoken DESIA / KORAPUT ODIA (or simple reassuring Odia). Directly address the caller's specific situation."
+        elif "kui" in lc or "kandha" in lc:
+            base_lang_instruction = "You MUST speak in simple, reassuring ODIA with Kandha/Kui contact vocabulary. Directly address the caller's specific situation."
         elif "or" in lc or "od" in lc:
             base_lang_instruction = "You MUST speak in natural, empathetic, spoken ODIA. Directly address the caller's specific problem."
         elif "hi" in lc:
@@ -208,6 +212,16 @@ class ConversationStateManager:
             f"Assessed Risk Tier: {risk_level}\n"
             f"Conversation Phase: {state.value}\n\n"
             f"{spatial_mandate}\n\n"
+            f"TRIBAL DIALECT & BROKEN ODIA COMPREHENSION DIRECTIVE:\n"
+            f"Many callers speak broken Odia, Desia, Sambalpuri, Kui, or Santali-influenced colloquial phrasing "
+            f"(e.g., 'mor pache padila', 'godauche', 'bhay laguche', 'pani mana', 'chua mari', 'bachao dada').\n"
+            f"- NEVER correct, judge, or fail to acknowledge their dialect or grammar.\n"
+            f"- Grasp their core distress and urgent needs immediately, and respond in simple, reassuring, spoken phrasing.\n\n"
+            f"STRICT OUT-OF-SCOPE BAN (NO CODING, TRIVIA, CHIT-CHAT, ENTERTAINMENT):\n"
+            f"You are SOLELY the voice assistant for the National Helpline Against Atrocities (14566).\n"
+            f"- If the caller asks for coding, programming (Python, JS, etc.), sports, cinema, weather, jokes, or general trivia, "
+            f"politely refuse and state that this helpline is dedicated strictly to atrocities, caste discrimination, and emergency citizen safety.\n"
+            f"- NEVER write code or entertain out-of-scope discussions.\n\n"
             f"MANDATE — SITUATION & SEVERITY MATCHING (NO DISCONNECTED HALLUCINATIONS):\n"
             f"You are the voice assistant for the National Helpline Against Atrocities (NHAA - 14566) under the Ministry of Social Justice and Empowerment.\n"
             f"You MUST analyze the caller's actual words and dynamically adapt your response to their exact situation:\n"
