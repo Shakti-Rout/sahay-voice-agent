@@ -34,6 +34,36 @@ class SupabaseManager:
         self.in_memory_sessions: Dict[str, Dict[str, Any]] = {}
         self.in_memory_assessments: List[Dict[str, Any]] = []
         self.in_memory_escalations: List[Dict[str, Any]] = []
+        self.in_memory_complaints: List[Dict[str, Any]] = [
+            {
+                "id": "complaint_01",
+                "call_id": "call_9901_forest",
+                "ticket_ref": "TKT-2026-0907-8821",
+                "type": "voice",
+                "timestamp": "Today, 22:45",
+                "risk_level": "CRITICAL",
+                "summary": "Outdoor pursuit in forest. Spatial wilderness protocol engaged; zero door-locking hallucination. PCR 112 dispatched to road landmark.",
+                "language": "or-IN",
+                "recording_url": "/api/v1/recordings/call_9901_forest.wav",
+                "recommended_services": ["PCR 112 Police Dispatch", "14566 Witness Protection Desk", "DLSA Emergency Cell"],
+                "status": "REGISTERED_ACTIVE_TRIAGE",
+                "is_legitimate": True
+            },
+            {
+                "id": "complaint_02",
+                "call_id": "call_9902_boycott",
+                "ticket_ref": "TKT-2026-0906-4412",
+                "type": "voice",
+                "timestamp": "Yesterday, 14:15",
+                "risk_level": "HIGH",
+                "summary": "Social boycott and tube well drinking water access denial. Kosli/Desia dialect normalized. Statutory Section 15A complaint prepared.",
+                "language": "sp-IN",
+                "recording_url": "/api/v1/recordings/call_9902_boycott.wav",
+                "recommended_services": ["14566 National Helpline", "DLSA Free Legal Aid", "District Welfare Magistrate"],
+                "status": "REGISTERED_LEGAL_AID",
+                "is_legitimate": True
+            }
+        ]
 
         if SUPABASE_AVAILABLE and self.url and self.key and "your_" not in self.key:
             try:
@@ -209,3 +239,69 @@ class SupabaseManager:
     def get_active_sessions(self) -> List[Dict[str, Any]]:
         """Fetch active calls for the operator dashboard."""
         return list(self.in_memory_sessions.values())
+
+    def register_complaint(
+        self,
+        call_id: str,
+        ticket_id: str,
+        summary: str,
+        risk_level: str,
+        language: str = "or-IN",
+        recording_url: Optional[str] = None,
+        recommended_services: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Registers a legitimate complaint for public citizen dashboard showcase."""
+        complaint = {
+            "id": f"complaint_{call_id}",
+            "call_id": call_id,
+            "ticket_ref": ticket_id,
+            "type": "voice",
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+            "risk_level": risk_level,
+            "summary": summary,
+            "language": language,
+            "recording_url": recording_url or f"/api/v1/recordings/{call_id}.wav",
+            "recommended_services": recommended_services or ["14566 National Helpline", "DLSA Legal Aid Council"],
+            "status": "REGISTERED_ACTIVE_TRIAGE",
+            "is_legitimate": True
+        }
+        # Prepend to top of list
+        self.in_memory_complaints.insert(0, complaint)
+        logger.info(f"[SupabaseManager] Registered complaint {ticket_id} for call {call_id}")
+        return complaint
+
+    def get_citizen_complaints(self) -> List[Dict[str, Any]]:
+        """Fetch legitimate citizen complaints and recordings for the public portal."""
+        return [c for c in self.in_memory_complaints if c.get("is_legitimate", True)]
+
+    def delete_complaint(self, identifier: str) -> Optional[Dict[str, Any]]:
+        """
+        DPDP Act Right to Erasure: Permanently delete citizen complaint and audio recording.
+        Identifier can be ticket_ref, call_id, or internal id.
+        """
+        deleted_item = None
+        for idx, comp in enumerate(list(self.in_memory_complaints)):
+            if identifier in (comp.get("ticket_ref"), comp.get("call_id"), comp.get("id")):
+                deleted_item = self.in_memory_complaints.pop(idx)
+                break
+
+        if deleted_item:
+            call_id = deleted_item.get("call_id")
+            # Remove from sessions and escalations as well
+            if call_id in self.in_memory_sessions:
+                self.in_memory_sessions.pop(call_id, None)
+            self.in_memory_escalations = [e for e in self.in_memory_escalations if e.get("external_call_id") != call_id]
+
+            # Erase physical recording file from disk for citizen privacy
+            try:
+                rec_dir = os.path.join(os.path.dirname(__file__), "..", "static", "recordings")
+                wav_path = os.path.join(rec_dir, f"{call_id}.wav")
+                if os.path.exists(wav_path):
+                    os.remove(wav_path)
+                    logger.info(f"[SupabaseManager] Permanently erased recording file: {wav_path}")
+            except Exception as e:
+                logger.warning(f"[SupabaseManager] Error deleting audio recording file: {e}")
+
+            logger.info(f"[SupabaseManager] Complaint {identifier} permanently erased per citizen request.")
+
+        return deleted_item

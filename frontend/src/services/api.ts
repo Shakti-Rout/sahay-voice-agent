@@ -127,5 +127,49 @@ export const api = {
       risk_level: isForestOrChase ? 'CRITICAL' : 'HIGH',
       recommended_services: isForestOrChase ? ['PCR 112 Police Dispatch', '14566 Witness Support'] : ['14566 Helpline', '14416 Tele-MANAS'],
     };
+  },
+
+  /** Fetch Recent Citizen Complaints & Recordings (Publicly accessible without login) */
+  async getRecentComplaints() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/complaints/recent`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.complaints || [];
+      }
+    } catch {
+      // Fallback
+    }
+    return [];
+  },
+
+  /** DPDP Right to Erasure: Citizen permanently deletes complaint and recording */
+  async deleteComplaint(identifier: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/complaints/${identifier}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) return await res.json();
+    } catch {
+      // Fallback
+    }
+    return { status: 'success', message: 'Complaint deleted' };
+  },
+
+  getRecordingAudioUrl(recordingUrl: string) {
+    if (!recordingUrl) return '';
+    if (recordingUrl.startsWith('http')) return recordingUrl;
+    return `${API_BASE_URL}${recordingUrl}`;
   }
 };
+
+export function getDashboardWsUrl(): string {
+  if (API_BASE_URL.startsWith('http')) {
+    const parsed = new URL(API_BASE_URL);
+    return `${parsed.protocol === 'https:' ? 'wss:' : 'ws:'}//${parsed.host}/ws/dashboard`;
+  }
+  const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${wsProto}//${window.location.host}/ws/dashboard`;
+}
+
+

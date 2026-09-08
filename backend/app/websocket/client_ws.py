@@ -32,10 +32,12 @@ from ..providers.hybrid_speech import HybridSpeechProvider
 from ..providers.gemini_provider import GeminiProvider
 from ..acoustic.extractor import StandardAcousticExtractor
 from ..emotion.classifier import Wav2VecEmotionClassifier
+import wave
 from ..distress.fusion_engine import DistressFusionEngine
 from ..trauma.controller import TraumaController
 from ..trauma.state_machine import ConversationStateManager, ConversationState
 from ..trauma.handoff import StructuredHandoffGenerator
+from ..trauma.prank_filter import PrankFilter
 from ..safety.validator import SafetyValidator
 from ..language.router import LanguageRouter, DialectBridge, SupportedLanguage
 from ..rag.retriever import VerifiedRAGRetriever
@@ -79,6 +81,7 @@ class ClientAudioSession:
         self.full_transcript: List[Dict[str, str]] = []
 
         self.audio_buffer = bytearray()
+        self.caller_audio_record = bytearray()
         self.is_ai_speaking = False
         self.current_tts_task: Optional[asyncio.Task] = None
         self.turn_lock = asyncio.Lock()
@@ -109,6 +112,7 @@ class ClientAudioSession:
 
         if is_speech:
             self.audio_buffer.extend(frame_pcm)
+            self.caller_audio_record.extend(frame_pcm)
             # HARD SAFETY CAP: If caller speaks for more than 30.0s continuously, auto-commit!
             if len(self.audio_buffer) >= int(16000 * 2 * 30.0):
                 logger.info(f"[Session {self.call_id}] Utterance reached 30.0s cap. Auto-committing.")
@@ -494,6 +498,7 @@ async def handle_client_websocket(websocket: WebSocket, call_id: str):
                     payload_b64 = data.get("payload", "")
                     if payload_b64:
                         pcm_bytes = base64.b64decode(payload_b64)
+                        session.caller_audio_record.extend(pcm_bytes)
                         logger.info(f"[WebSocket] Processing complete caller utterance: {len(pcm_bytes)} bytes")
                         session.is_ai_speaking = False
                         asyncio.create_task(session._process_utterance(pcm_bytes, websocket))
@@ -531,6 +536,47 @@ async def handle_client_websocket(websocket: WebSocket, call_id: str):
     except Exception as e:
         logger.error(f"[WebSocket] Error on {call_id}: {e}")
     finally:
+        # 1. Save caller audio recording if audio frames were captured
+        if len(session.caller_audio_record) > 0:
+            try:
+                rec_dir = os.path.join(os.path.dirname(__file__), "..", "static", "recordings")
+                os.makedirs(rec_dir, exist_ok=True)
+                wav_path = os.path.join(rec_dir, f"{call_id}.wav")
+                with wave.open(wav_path, "wb") as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(2)
+                    wf.setframerate(16000)
+                    wf.writeframes(bytes(session.caller_audio_record))
+                logger.info(f"[Session {call_id}] Saved caller audio recording to {wav_path} ({len(session.caller_audio_record)} bytes)")
+            except Exception as e:
+                logger.warning(f"[Session {call_id}] Could not write audio recording file: {e}")
+
+        # 2. Precautionary Prank & Spam Filter
+        duration_s = len(session.caller_audio_record) / 32000.0
+        user_texts = [t["content"] for t in session.full_transcript if t.get("role") == "user"]
+        prank_res = PrankFilter.evaluate(
+            call_id=call_id,
+            transcripts=user_texts,
+            risk_score=session.distress_state.current_score,
+            duration_seconds=duration_s,
+            safety_flags=session.distress_state.safety_flags.__dict__ if hasattr(session.distress_state, "safety_flags") else None
+        )
+
+        if prank_res.is_legitimate and prank_res.ticket_id:
+            summary = user_texts[0] if user_texts else "Citizen Emergency Triage Session"
+            complaint = session.db.register_complaint(
+                call_id=call_id,
+                ticket_id=prank_res.ticket_id,
+                summary=summary,
+                risk_level=session.distress_state.current_level.value,
+                language=session.language_router.get_session_language(call_id).value,
+                recording_url=f"/api/v1/recordings/{call_id}.wav"
+            )
+            await broadcaster.broadcast("complaint_registered", complaint)
+            logger.info(f"[Session {call_id}] Registered genuine citizen complaint: {prank_res.ticket_id}")
+        else:
+            logger.info(f"[Session {call_id}] Prank/Spam filtered out: {prank_res.reason}")
+
         await session.db.update_call_status(call_id, "completed")
         await broadcaster.broadcast("call_ended", {"call_id": call_id})
         logger.info(f"[WebSocket] Cleaned up session: {call_id}")

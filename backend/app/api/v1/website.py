@@ -1,7 +1,9 @@
+import os
 import uuid
 import datetime
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app.trauma.state_machine import ConversationStateManager, ConversationState
@@ -9,6 +11,8 @@ from app.trauma.rules import SafetyRulesEngine
 from app.safety.validator import SafetyValidator
 from app.language.router import LanguageRouter, DialectBridge
 from app.domain.models import RiskLevel, SafetyFlags
+from app.database.supabase_client import SupabaseManager
+from app.websocket.dashboard_ws import broadcaster
 
 router = APIRouter(prefix="", tags=["Website & Citizen Portal"])
 
@@ -71,30 +75,59 @@ async def portal_login(req: LoginRequest):
 
 @router.get("/user/{user_id}/logs")
 async def get_user_logs(user_id: str):
-    # Returns representative and recent citizen interactions
+    db = SupabaseManager.get_instance()
+    complaints = db.get_citizen_complaints()
     return {
         "user_id": user_id,
-        "logs": [
-            {
-                "id": "sess_01",
-                "ticket_ref": "TKT-2026-0907-8821",
-                "type": "voice",
-                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "risk_level": "CRITICAL",
-                "summary": "Outdoor pursuit in forest. PCR 112 dispatched to road landmark.",
-                "recommended_services": ["PCR 112 Police Dispatch", "14566 Legal Protection"]
-            },
-            {
-                "id": "sess_02",
-                "ticket_ref": "TKT-2026-0906-4412",
-                "type": "chat",
-                "timestamp": (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M"),
-                "risk_level": "HIGH",
-                "summary": "Social boycott and drinking water tube well access denial.",
-                "recommended_services": ["14566 National Helpline", "DLSA Legal Aid Council"]
-            }
-        ]
+        "logs": complaints
     }
+
+@router.get("/complaints/recent")
+@router.get("/website/complaints/recent")
+async def get_recent_complaints():
+    """Publicly accessible endpoint: returns recent citizen complaints and recordings without login."""
+    db = SupabaseManager.get_instance()
+    return {
+        "status": "success",
+        "complaints": db.get_citizen_complaints()
+    }
+
+@router.delete("/complaints/{identifier}")
+@router.delete("/website/complaints/{identifier}")
+async def delete_citizen_complaint(identifier: str):
+    """
+    DPDP Act Right to Erasure: Citizen permanently withdraws complaint and erases audio recording.
+    Notifies operator dashboard immediately via WebSocket broadcaster.
+    """
+    db = SupabaseManager.get_instance()
+    deleted = db.delete_complaint(identifier)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Complaint or recording not found or already erased.")
+
+    # Synchronize real-time withdrawal with Operator Dashboard
+    await broadcaster.broadcast("complaint_deleted", {
+        "identifier": identifier,
+        "call_id": deleted.get("call_id"),
+        "ticket_ref": deleted.get("ticket_ref"),
+        "deleted_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "reason": "CITIZEN_DPDP_RIGHT_TO_ERASURE"
+    })
+
+    return {
+        "status": "success",
+        "message": f"Complaint {identifier} and associated audio recording permanently erased per DPDP Act.",
+        "deleted": deleted
+    }
+
+@router.get("/recordings/{filename}")
+@router.get("/website/recordings/{filename}")
+async def get_recording_audio(filename: str):
+    """Serve saved voice call recording for playback in browser audio player."""
+    rec_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static", "recordings")
+    file_path = os.path.join(rec_dir, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Recording audio file not found.")
+    return FileResponse(file_path, media_type="audio/wav")
 
 @router.post("/chat/message")
 async def send_chat_message(req: ChatMessageRequest):

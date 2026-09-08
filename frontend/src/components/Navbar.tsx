@@ -25,6 +25,9 @@ export const Navbar: React.FC = () => {
             <Link to="/agent" className={`nav-menu-item ${isActive('/agent') ? 'w--current' : ''}`}>
               AI Voice Agent
             </Link>
+            <Link to="/user-dashboard" className={`nav-menu-item ${isActive('/user-dashboard') ? 'w--current' : ''}`}>
+              Citizen Cases
+            </Link>
             <Link to="/contact" className={`nav-menu-item ${isActive('/contact') ? 'w--current' : ''}`}>
               Contact Us
             </Link>
@@ -65,6 +68,7 @@ export const Navbar: React.FC = () => {
             <Link to="/" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Home</Link>
             <a href="/#services" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Services</a>
             <Link to="/agent" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>AI Voice Agent</Link>
+            <Link to="/user-dashboard" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Citizen Cases</Link>
             <Link to="/contact" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
             <Link to="/login" className="nav-adaptation-link regular-xl" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
           </div>

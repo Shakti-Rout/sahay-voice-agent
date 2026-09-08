@@ -98,6 +98,19 @@ class DialectBridge:
         r"\bkhedi delu\b": "bahiskara kale",
         r"\bkhedi dele\b": "bahiskara kale",
         r"\bmarba\b": "marideba",
+        r"\bmarbar\b": "marideba",
+        r"\bmui\b": "mu",
+        r"\bmuke\b": "mate",
+        r"\bkoruche\b": "karuchi",
+        r"\bkoruchhan\b": "karuchhanti",
+        r"\bhoiche\b": "heichi",
+        r"\bdelan\b": "dele",
+        r"\bbhatar\b": "swami",
+        r"\blagin\b": "pain",
+        r"\bjhoruche\b": "bohuchi",
+        r"\bthakibake\b": "rahibaku",
+        r"\bbanchaa\b": "banchantu",
+        r"\bpathaa\b": "pathantu",
         r"\bmor banchao\b": "mote banchantu",
         r"\bdada banchao\b": "bhai banchantu",
         r"\bdada\b": "bhai",
@@ -108,6 +121,7 @@ class DialectBridge:
         r"\bkarba\b": "kariba",
         r"\bkhaye\b": "khauchi",
         r"\bdongar\b": "pahar",
+        r"\bdongor\b": "pahar",
         r"\bbana\b": "jangala",
         r"\bmora ke\b": "mote",
         r"\btora ke\b": "tote",
@@ -119,18 +133,29 @@ class DialectBridge:
     KUI_TO_ODIA = {
         r"\baanu\b": "mu",
         r"\baane\b": "mate",
+        r"\baanki\b": "mate",
+        r"\baahe\b": "nahi",
         r"\bgida\b": "pila",
         r"\bmira\b": "pila",
         r"\bmera\b": "ghara",
         r"\biddu\b": "ghara",
         r"\bhaji\b": "rasta",
         r"\bgahi\b": "bhaya",
+        r"\bbiiti\b": "bhaya",
         r"\bvespa\b": "kahiba",
         r"\bnaju\b": "gan",
         r"\bdaha\b": "pani",
         r"\bbana\b": "jangala",
+        r"\bmara\b": "jangala",
         r"\bdohpa\b": "mariba",
-        r"\bpacha\b": "pache"
+        r"\bhavba\b": "mariba",
+        r"\bpidisenji\b": "maruchanti",
+        r"\bpitisenji\b": "maruchanti",
+        r"\bsaaha\b": "sahajya",
+        r"\bkidu\b": "karantu",
+        r"\blohe\b": "darkar",
+        r"\bpacha\b": "pache",
+        r"\bpoyatu\b": "pathantu"
     }
 
     # Broken and colloquial Odia telegraphic phrasing
@@ -210,11 +235,13 @@ class LanguageRouter:
 
     DESIA_PHONETIC_MARKERS = {
         "godauche", "laguche", "sunba", "dhukila", "padila", "mor", "banchao", "khedi", "delu",
-        "dada", "ghare", "dongar", "marba", "padili", "jaiba", "karba"
+        "dada", "ghare", "dongar", "dongor", "marba", "marbar", "mui", "muke", "koruche", "koruchhan",
+        "hoiche", "delan", "bhatar", "jhoruche", "thakibake", "padili", "jaiba", "karba"
     }
 
     KUI_PHONETIC_MARKERS = {
-        "aanu", "aane", "gida", "mera", "haji", "gahi", "vespa", "naju", "iddu", "daha", "mira", "dohpa"
+        "aanu", "aane", "aanki", "gida", "mera", "haji", "gahi", "biiti", "vespa", "naju", "iddu", "daha",
+        "mira", "dohpa", "havba", "pidisenji", "pitisenji", "saaha", "kidu", "lohe", "pacha", "poyatu"
     }
 
     SANTALI_PHONETIC_MARKERS = {

@@ -26,8 +26,8 @@ def _load_ilrc_corpus():
                     reader = csv.DictReader(f)
                     for row in reader:
                         sev = (row.get("severity") or "").upper()
-                        # Keywords from English, Hindi, Odia, Sambalpuri, and Santali columns
-                        for col in ("english_keywords", "hindi_keywords", "odia_keywords", "sambalpuri_keywords", "santali_keywords"):
+                        # Keywords from English, Hindi, Odia, Sambalpuri, Santali, Kui, and Desia columns
+                        for col in ("english_keywords", "hindi_keywords", "odia_keywords", "sambalpuri_keywords", "santali_keywords", "kui_keywords", "desia_keywords"):
                             raw_val = row.get(col, "")
                             for part in raw_val.split(","):
                                 clean = part.strip().lower()
@@ -57,10 +57,14 @@ class SafetyRulesEngine:
         "ebe maruchhanti", "beating now", "darwaza tod rahe", "ghara bhanguchhanti",
         "raktapata", "bleeding", "unconscious", "behosh", "bachao", "kapata bhang",
         "rape", "gang rape", "murder", "hatya", "balatkar", "killed",
-        # Active Pursuit & Forest / Wilderness Emergency (Odia, Sambalpuri, Santali)
+        # Active Pursuit & Forest / Wilderness Emergency (Odia, Sambalpuri, Santali, Kui, Desia)
         "godauchanti", "godauchhan", "panjayedina", "pache padichhanti", "mariba pain",
         "gojing lagid", "jangala re nuchiki", "bana re nuchi", "bir re ukanakana",
         "dongar re nuchi", "dalan kanako", "mor pita", "marba", "dada bachao", "banchaoing pe",
+        # Kui & Desia Tribal Triggers
+        "havba", "havba pain", "pidisenji", "pitisenji", "biiti manji", "saaha kidu",
+        "mara bitre nuchiki", "bana bitre nuchi", "dongor bitre", "marbar lagi",
+        "godauche", "maruchi pituchi", "mui ebe khatra",
         # Native Odia Script
         "ଲାଠି", "ବନ୍ଧୁକ", "ଛୁରୀ", "ଖଣ୍ଡା", "ଭାଙ୍ଗୁଛନ୍ତି", "ଭାଙ୍ଗି", "ମାରୁଛନ୍ତି", "ଗୋଡ଼ାଉଛନ୍ତି", "ଜଙ୍ଗଲରେ ଲୁଚି",
         "ଆତ୍ମହତ୍ୟା", "ଜୀବନ ହାରି", "ରକ୍ତ", "ବଚାଅ", "କପାଟ ଭାଙ୍ଗ", "ହତ୍ୟା", "ବଳାତ୍କାର",
@@ -71,9 +75,10 @@ class SafetyRulesEngine:
 
     HIGH_TRIGGERS = list(set([
         # English & Romanized
-        "dhamaka", "dhamki", "threat", "marideba", "kill you",
+        "dhamaka", "dhamki", "threat", "marideba", "kill you", "marbar dhamki",
         "caste abuse", "atiyachara", "boycott", "pani nebaku mana", "samaja ru bahiskara",
-        "khedi dele", "dak nu mana", "ato khon ko orok", "bata banda", "dahar bondo",
+        "khedi dele", "khedi dela", "dak nu mana", "ato khon ko orok", "bata banda", "dahar bondo",
+        "daha mana", "naju ru khedanji", "ration dokan", "iddu haji banda",
         "kidnap", "police complaint mana", "land dispute attack",
         # Native Odia Script
         "ଧମକ", "ଧମକା", "ମାରିଦେବା", "ଅତ୍ୟାଚାର", "ଜାତିଆଣ", "ଅପହରଣ", "ବାସନ୍ଦ", "ପାଣି ମନା", "ସମାଜରୁ ବହିଷ୍କାର",
