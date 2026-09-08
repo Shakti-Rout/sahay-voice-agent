@@ -29,3 +29,42 @@ def test_victim_blaming_blocked():
     safe_text, is_clean = SafetyValidator.validate(text, "en")
     assert is_clean is False
     assert "your fault" not in safe_text.lower()
+
+
+def test_out_of_scope_coding_query_blocked():
+    query = "Can you write a python script to sort an array using binary search?"
+    assert SafetyValidator.is_out_of_scope(query) is True
+
+    safe_text, is_clean = SafetyValidator.validate(
+        "Here is the python code: def sort(): pass",
+        "en",
+        caller_transcript=query
+    )
+    assert is_clean is False
+    assert "14566" in safe_text
+    assert "cannot answer out-of-scope" in safe_text.lower() or "out-of-scope" in safe_text.lower()
+
+
+def test_out_of_scope_trivia_and_sports_blocked():
+    query_sports = "Who won the IPL cricket match yesterday?"
+    assert SafetyValidator.is_out_of_scope(query_sports) is True
+
+    query_recipe = "Can you tell me a good biryani recipe?"
+    assert SafetyValidator.is_out_of_scope(query_recipe) is True
+
+    query_odia = "ଆଜି କ୍ରିକେଟ ମ୍ୟାଚ୍ କିଏ ଜିତିଲା?"
+    assert SafetyValidator.is_out_of_scope(query_odia) is True
+
+    safe_text_hi, is_clean_hi = SafetyValidator.validate("IPL match was won by Mumbai", "hi", caller_transcript=query_sports)
+    assert is_clean_hi is False
+    assert "14566" in safe_text_hi
+    assert "कार्यक्षेत्र से बाहर" in safe_text_hi
+
+
+def test_in_scope_emergency_not_blocked():
+    emergency_text = "Please help me, they are attacking with lathi and threatening our family"
+    assert SafetyValidator.is_out_of_scope(emergency_text) is False
+
+    boycott_text = "Social boycott in village, stopped water and tube well access"
+    assert SafetyValidator.is_out_of_scope(boycott_text) is False
+
