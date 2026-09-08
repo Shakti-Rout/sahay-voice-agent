@@ -124,10 +124,8 @@ python -m pytest tests -v
 ## 📸 Screenshots
 
 ### Portal Home Page
-![Home Page](frontend/src/assets/hero.png)
 
 ### Statutory Seals & National Helpline Compliance
-![Footer Branding](frontend/public/images/footer.png)
 
 ---
 
