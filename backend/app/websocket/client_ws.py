@@ -27,6 +27,8 @@ from ..domain.models import DistressState, RiskAssessment, RiskLevel
 from ..audio.vad import VoiceActivityDetector
 from ..audio.resampler import AudioResampler
 from ..providers.sarvam_provider import SarvamProvider
+from ..providers.bhashini_provider import BhashiniProvider
+from ..providers.hybrid_speech import HybridSpeechProvider
 from ..providers.gemini_provider import GeminiProvider
 from ..acoustic.extractor import StandardAcousticExtractor
 from ..emotion.classifier import Wav2VecEmotionClassifier
@@ -50,7 +52,16 @@ class ClientAudioSession:
         self.call_id = call_id
         self.vad = VoiceActivityDetector()
         self.resampler = AudioResampler()
-        self.sarvam = SarvamProvider(api_key=settings.SARVAM_API_KEY, base_url=settings.SARVAM_BASE_URL)
+        self.speech = HybridSpeechProvider(
+            sarvam_api_key=settings.SARVAM_API_KEY,
+            sarvam_base_url=settings.SARVAM_BASE_URL,
+            bhashini_auth_token=settings.BHASHINI_AUTH_TOKEN,
+            bhashini_user_id=settings.BHASHINI_USER_ID,
+            bhashini_api_key=settings.BHASHINI_API_KEY,
+            bhashini_inference_url=settings.BHASHINI_INFERENCE_URL,
+            primary_provider="sarvam"
+        )
+        self.sarvam = self.speech
         self.gemini = GeminiProvider(api_key=settings.GEMINI_API_KEY, model=settings.GEMINI_MODEL)
         self.acoustic_extractor = StandardAcousticExtractor()
         self.emotion_classifier = Wav2VecEmotionClassifier()
