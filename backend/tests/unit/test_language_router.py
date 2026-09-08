@@ -75,6 +75,55 @@ def test_santali_dialect_normalization():
     assert "maruchhanti" in normalized
 
 
+def test_desia_dialect_normalization():
+    desia_text = "mor pache padila godauche dada banchao bhay laguche khedi delu"
+    normalized = DialectBridge.normalize_dialect(desia_text, SupportedLanguage.DESIA)
+
+    assert "mo pache padichhi" in normalized
+    assert "godauchhi" in normalized
+    assert "bhai banchantu" in normalized
+    assert "bhaya laguchhi" in normalized
+    assert "bahiskara kale" in normalized
+
+
+def test_kui_dialect_normalization():
+    kui_text = "aanu gahi vespa naju re iddu haji re daha"
+    normalized = DialectBridge.normalize_dialect(kui_text, SupportedLanguage.KUI)
+
+    assert "mu" in normalized
+    assert "bhaya" in normalized
+    assert "kahiba" in normalized
+    assert "gan" in normalized
+    assert "ghara" in normalized
+    assert "rasta" in normalized
+    assert "pani" in normalized
+
+
+def test_broken_odia_colloquial_normalization():
+    broken_text = "mate dar laguchi chua mari bachao dada pani nai grama bahara"
+    normalized = DialectBridge.normalize_dialect(broken_text, SupportedLanguage.ODIA)
+
+    assert "mate bhaya laguchi" in normalized
+    assert "pila ku maruchanti" in normalized
+    assert "bhai banchantu" in normalized
+    assert "pani miluni" in normalized
+    assert "gan ru bahiskara" in normalized
+
+
+def test_desia_and_kui_phonetic_detection():
+    router = LanguageRouter()
+
+    # Desia romanized input
+    desia_roman = "mor pache padila godauche khedi delu banchao dada"
+    lang, conf = router.detect_language_from_text(desia_roman)
+    assert lang == SupportedLanguage.DESIA
+
+    # Kui romanized input
+    kui_roman = "aanu aane gida mera haji gahi vespa naju iddu daha"
+    lang_kui, conf_kui = router.detect_language_from_text(kui_roman)
+    assert lang_kui == SupportedLanguage.KUI
+
+
 def test_session_language_update():
     router = LanguageRouter()
     call_id = "test_call_lang_1"
@@ -91,3 +140,4 @@ def test_session_language_update():
     active_te = router.update_session_language(call_id, "te-IN", 0.95)
     assert active_te == SupportedLanguage.TELUGU
     assert router.get_session_language(call_id) == SupportedLanguage.TELUGU
+
